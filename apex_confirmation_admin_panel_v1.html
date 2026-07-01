@@ -1,0 +1,558 @@
+<!DOCTYPE html>
+<html lang="my">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Apex — Confirmation Admin Panel</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0;}
+body{font-family:'Segoe UI',Arial,sans-serif;background:#F0F4F8;color:#222;min-height:100vh;}
+
+.header{background:linear-gradient(135deg,#1F4E79,#2E75B6);padding:14px 20px;text-align:center;position:sticky;top:0;z-index:100;box-shadow:0 2px 8px rgba(0,0,0,.2);}
+.header h1{color:#fff;font-size:16px;font-weight:700;}
+.header p{color:#BDD7EE;font-size:11px;margin-top:2px;}
+
+.stats-bar{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;padding:12px;max-width:900px;margin:0 auto;}
+.stat-box{background:#fff;border-radius:12px;padding:10px 6px;text-align:center;box-shadow:0 2px 8px rgba(0,0,0,.06);}
+.stat-box .num{font-size:18px;font-weight:700;color:#1F4E79;}
+.stat-box .lbl{font-size:10px;color:#888;margin-top:2px;}
+.stat-box.pending .num{color:#FF9800;}
+.stat-box.approved .num{color:#4CAF50;}
+.stat-box.rejected .num{color:#E53935;}
+
+.filter-bar{display:flex;gap:6px;padding:0 12px 12px;max-width:900px;margin:0 auto;overflow-x:auto;}
+.filter-chip{padding:6px 14px;border-radius:20px;background:#fff;border:1.5px solid #E0E0E0;font-size:12px;font-weight:700;color:#666;cursor:pointer;white-space:nowrap;}
+.filter-chip.active{background:#1F4E79;border-color:#1F4E79;color:#fff;}
+
+.container{max-width:900px;margin:0 auto;padding:0 12px 30px;}
+
+.list-card{background:#fff;border-radius:14px;box-shadow:0 2px 10px rgba(0,0,0,.08);margin-bottom:12px;overflow:hidden;}
+.list-card-top{padding:12px 16px;border-bottom:1px solid #F0F0F0;display:flex;justify-content:space-between;align-items:flex-start;}
+.tour-code{font-size:14px;font-weight:700;color:#1F4E79;}
+.trip-name{font-size:12px;color:#555;margin-top:2px;}
+.status-pill{padding:3px 10px;border-radius:12px;font-size:10px;font-weight:700;flex-shrink:0;}
+.status-pill.pending{background:#FFF3E0;color:#E65100;}
+.status-pill.approved{background:#E8F5E9;color:#2E7D32;}
+.status-pill.rejected{background:#FFEBEE;color:#C62828;}
+
+.list-card-body{padding:12px 16px;}
+.info-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:10px;}
+.info-item{font-size:12px;}
+.info-item .lbl{color:#888;font-size:10px;text-transform:uppercase;font-weight:700;}
+.info-item .val{color:#222;font-weight:600;margin-top:1px;}
+
+.expand-toggle{font-size:11px;color:#2E75B6;font-weight:700;cursor:pointer;text-align:center;padding:6px;border-top:1px solid #F0F0F0;margin-top:4px;}
+
+.detail-panel{display:none;border-top:1px dashed #E0E0E0;margin-top:10px;padding-top:10px;}
+.detail-panel.open{display:block;}
+
+.field{margin-bottom:10px;}
+.field:last-child{margin-bottom:0;}
+.field label{display:block;font-size:11px;font-weight:700;color:#555;margin-bottom:3px;text-transform:uppercase;letter-spacing:.4px;}
+.field input,.field select{width:100%;padding:9px 12px;border:2px solid #E0E0E0;border-radius:10px;font-size:13px;color:#222;background:#FAFAFA;outline:none;font-family:inherit;}
+.field input:focus,.field select:focus{border-color:#2E75B6;background:#fff;}
+.field input[readonly]{background:#EEF4FB;color:#1F4E79;font-weight:700;}
+
+.row-2{display:grid;grid-template-columns:1fr 1fr;gap:8px;}
+
+.owner-toggle{display:flex;gap:6px;margin-bottom:10px;}
+.owner-btn{flex:1;padding:9px;border:2px solid #E0E0E0;border-radius:10px;background:#FAFAFA;font-size:12px;font-weight:700;color:#666;cursor:pointer;text-align:center;}
+.owner-btn.active{background:#1F4E79;border-color:#1F4E79;color:#fff;}
+
+.fee-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:10px;}
+
+.btn-row{display:flex;gap:8px;margin-top:12px;}
+.btn{flex:1;padding:11px;border:none;border-radius:10px;font-size:13px;font-weight:700;cursor:pointer;}
+.btn-approve{background:linear-gradient(135deg,#4CAF50,#66BB6A);color:#fff;}
+.btn-reject{background:#FFEBEE;color:#C62828;border:1.5px solid #FFCDD2;}
+.btn-edit{background:#EEF4FB;color:#1F4E79;border:1.5px solid #BDD7EE;}
+
+.approved-box{background:#E8F5E9;border:1.5px solid #A5D6A7;border-radius:10px;padding:12px;margin-top:10px;}
+.approved-box .title{font-size:12px;font-weight:700;color:#2E7D32;margin-bottom:8px;}
+.link-row{display:flex;gap:6px;align-items:center;background:#fff;border-radius:8px;padding:8px 10px;margin-bottom:6px;}
+.link-row input{flex:1;border:none;background:transparent;font-size:11px;color:#555;outline:none;}
+.btn-copy{padding:6px 12px;background:#1F4E79;color:#fff;border:none;border-radius:6px;font-size:11px;font-weight:700;cursor:pointer;flex-shrink:0;}
+.btn-copy.copied{background:#4CAF50;}
+
+.send-options{display:flex;gap:6px;margin-top:8px;}
+.send-opt{flex:1;padding:8px;border-radius:8px;background:#fff;border:1.5px solid #E0E0E0;font-size:11px;font-weight:700;color:#666;text-align:center;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:4px;}
+.send-opt:hover{border-color:#2E75B6;color:#2E75B6;}
+
+.empty-state{text-align:center;padding:50px 20px;color:#999;}
+.empty-state .icon{font-size:40px;margin-bottom:10px;}
+
+.toast{position:fixed;bottom:20px;left:50%;transform:translateX(-50%);background:#1F4E79;color:#fff;padding:10px 22px;border-radius:20px;font-size:13px;font-weight:600;z-index:9999;opacity:0;transition:opacity .3s;pointer-events:none;white-space:nowrap;max-width:90%;text-align:center;}
+.toast.show{opacity:1;}
+
+.hidden{display:none!important;}
+.badge{display:inline-block;padding:2px 8px;border-radius:10px;font-size:10px;font-weight:700;}
+.badge-city{background:#BDD7EE;color:#1F4E79;}
+.badge-hw{background:#FFE0B2;color:#E65100;}
+
+@media(max-width:480px){
+  .stats-bar{grid-template-columns:1fr 1fr;}
+  .info-grid,.row-2,.fee-grid{grid-template-columns:1fr;}
+}
+</style>
+</head>
+<body>
+
+<div class="toast" id="toast"></div>
+
+<div class="header">
+  <h1>📋 APEX CAR RENTAL</h1>
+  <p>Confirmation Admin Panel</p>
+</div>
+
+<div class="stats-bar">
+  <div class="stat-box"><div class="num" id="statTotal">0</div><div class="lbl">Total</div></div>
+  <div class="stat-box pending"><div class="num" id="statPending">0</div><div class="lbl">Pending</div></div>
+  <div class="stat-box approved"><div class="num" id="statApproved">0</div><div class="lbl">Approved</div></div>
+  <div class="stat-box rejected"><div class="num" id="statRejected">0</div><div class="lbl">Rejected</div></div>
+</div>
+
+<div class="filter-bar">
+  <div class="filter-chip active" data-f="all" onclick="setFilter('all',this)">အားလုံး</div>
+  <div class="filter-chip" data-f="pending" onclick="setFilter('pending',this)">🟡 Pending</div>
+  <div class="filter-chip" data-f="approved" onclick="setFilter('approved',this)">✅ Approved</div>
+  <div class="filter-chip" data-f="rejected" onclick="setFilter('rejected',this)">❌ Rejected</div>
+</div>
+
+<div class="container" id="listContainer"></div>
+
+<script>
+// ══════════════════════════════════════════
+// CONFIRMATION SYSTEM WEB APP URL
+// ══════════════════════════════════════════
+const CONFIRMATION_WEBAPP_URL = 'https://script.google.com/macros/s/AKfycbxA4Oa48IJNkjk0uvcw9G90MhHL8hhsgE0zszGi2IksVwd-Uf8DOiMbviedMOr6iADVjA/exec';
+
+let CARS = [];
+let DRIVERS = [];
+
+// ══════════════════════════════════════════
+// LOAD REAL DATA FROM SHEET
+// ══════════════════════════════════════════
+async function loadSheetData() {
+  try {
+    // Cars ဆွဲ
+    const carsResp = await fetch(CONFIRMATION_WEBAPP_URL + '?action=getCars');
+    CARS = await carsResp.json();
+
+    // Drivers ဆွဲ
+    const driversResp = await fetch(CONFIRMATION_WEBAPP_URL + '?action=getDrivers');
+    DRIVERS = await driversResp.json();
+
+    showToast('✅ Cars ' + CARS.length + ' စီး | Drivers ' + DRIVERS.length + ' ယောက် Load ပြီး');
+    render();
+  } catch(err) {
+    showToast('⚠️ Sheet မှ Data ဆွဲမရပါ — Local browser မှ ဖွင့်ပါ');
+    // Fallback — demo data
+    CARS = [
+      {carNo:'9D/8865', model:'Alphard 2012 Ottoman', group:'A', defaultDriverName:'', defaultDriverPhone:'', defaultDriverId:''},
+      {carNo:'2R/8340', model:'Majesty 2020 Ottoman', group:'A', defaultDriverName:'', defaultDriverPhone:'', defaultDriverId:''},
+      {carNo:'9P/5555', model:'Mercedes Vito 2018',   group:'B', defaultDriverName:'', defaultDriverPhone:'', defaultDriverId:''},
+    ];
+    DRIVERS = [
+      {id:'1', name:'ဦးအေးမြင့်',  phone:'09-111111111', group:'A'},
+      {id:'2', name:'ဦးသက်အောင်', phone:'09-222222222', group:'A'},
+    ];
+    render();
+  }
+}
+
+let records = [];
+let currentFilter = 'all';
+
+// ══════════════════════════════════════════
+// LOAD ALL DATA (Cars + Drivers + Records)
+// ══════════════════════════════════════════
+async function loadSheetData() {
+  try {
+    showToast('⏳ Sheet မှ Data ဆွဲနေသည်...');
+
+    // Cars ဆွဲ
+    const carsResp = await fetch(CONFIRMATION_WEBAPP_URL + '?action=getCars');
+    CARS = await carsResp.json();
+
+    // Drivers ဆွဲ
+    const driversResp = await fetch(CONFIRMATION_WEBAPP_URL + '?action=getDrivers');
+    DRIVERS = await driversResp.json();
+
+    // Confirmation Pending records ဆွဲ
+    const recordsResp = await fetch(CONFIRMATION_WEBAPP_URL + '?action=getConfirmationPending');
+    const sheetRecords = await recordsResp.json();
+
+    // Sheet data ကို Panel format နဲ့ map
+    records = sheetRecords.map((r, idx) => ({
+      id: idx + 1,
+      tourCode: r.tourCode,
+      tripName: r.tripDetails?.tripName || r.carType || '',
+      tripType: r.tripType || 'city',
+      dates: r.tripDetails?.dates || '',
+      carType: r.carType || '',
+      pax: r.pax || '',
+      contactName: r.contactName || '',
+      contactPhone: r.contactPhone || '',
+      pickup: (r.pickupPlace || '') + (r.pickupTime ? ' ' + r.pickupTime : ''),
+      payment: r.paymentMethod || '',
+      price: r.price || 0,
+      status: (r.status || 'PENDING').toLowerCase().replace('customer_filled','pending'),
+      carOwner: r.carOwner || 'apex',
+      assignedCar: r.assignedCarNo || '',
+      assignedDriver: r.assignedDriver || '',
+      driverPhone: r.driverPhone || '',
+      fuelAdvance: r.fuelAdvance || '',
+      tollAdvance: r.tollAdvance || '',
+      settlement: r.settlement || 'advance',
+    }));
+
+    // Sheet ထဲ data မရှိသေးရင် Demo 1 ခု ထည့်
+    if (records.length === 0) {
+      records = [{
+        id: 1,
+        tourCode: 'DEMO-001',
+        tripName: 'Demo Record (Sheet ထဲ မရှိသေး)',
+        tripType: 'city',
+        dates: '01.07.26',
+        carType: 'Test',
+        pax: 2,
+        contactName: 'Test Customer',
+        contactPhone: '09-000000000',
+        pickup: 'Test Hotel, 08:00',
+        payment: 'Cash',
+        price: 350000,
+        status: 'pending',
+        carOwner: 'apex',
+        assignedCar: '',
+        assignedDriver: '',
+        driverPhone: '',
+        fuelAdvance: '',
+        tollAdvance: '',
+        settlement: 'advance',
+      }];
+    }
+
+    showToast('✅ Cars ' + CARS.length + ' စီး | Drivers ' + DRIVERS.length + ' ယောက် | Records ' + records.length + ' ခု Load ပြီး');
+    render();
+
+  } catch(err) {
+    showToast('⚠️ Connection Error — Local browser မှ ဖွင့်ပါ: ' + err.message);
+    // Fallback demo
+    CARS = [{carNo:'9D/8865', model:'Alphard 2012 Ottoman', group:'A', defaultDriverName:'', defaultDriverPhone:'', defaultDriverId:''}];
+    DRIVERS = [{id:'1', name:'Sample Driver', phone:'09-000000000', group:'A'}];
+    records = [{
+      id:1, tourCode:'DEMO-001', tripName:'Demo (Offline)', tripType:'city',
+      dates:'01.07.26', carType:'Test', pax:2, contactName:'Test',
+      contactPhone:'09-000', pickup:'Test Hotel', payment:'Cash', price:0,
+      status:'pending', carOwner:'apex', assignedCar:'', assignedDriver:'',
+      driverPhone:'', fuelAdvance:'', tollAdvance:'', settlement:'advance',
+    }];
+    render();
+  }
+}
+
+// ══════════════════════════════════════════
+// RENDER
+// ══════════════════════════════════════════
+function render(){
+  updateStats();
+  const wrap = document.getElementById('listContainer');
+  const filtered = currentFilter==='all' ? records : records.filter(r=>r.status===currentFilter);
+
+  if(filtered.length === 0){
+    wrap.innerHTML = `<div class="empty-state"><div class="icon">📭</div><div>ဒီ Filter အတွက် Record မရှိပါ</div></div>`;
+    return;
+  }
+
+  wrap.innerHTML = filtered.map(r => buildCard(r)).join('');
+}
+
+function updateStats(){
+  document.getElementById('statTotal').textContent = records.length;
+  document.getElementById('statPending').textContent = records.filter(r=>r.status==='pending').length;
+  document.getElementById('statApproved').textContent = records.filter(r=>r.status==='approved').length;
+  document.getElementById('statRejected').textContent = records.filter(r=>r.status==='rejected').length;
+}
+
+function setFilter(f, el){
+  currentFilter = f;
+  document.querySelectorAll('.filter-chip').forEach(c=>c.classList.remove('active'));
+  el.classList.add('active');
+  render();
+}
+
+function buildCard(r){
+  const statusLabel = {pending:'🟡 Pending', approved:'✅ Approved', rejected:'❌ Rejected'}[r.status];
+  const tripBadge = r.tripType==='city' ? '<span class="badge badge-city">🏙️ City</span>' : '<span class="badge badge-hw">🛣️ Highway</span>';
+
+  return `
+  <div class="list-card" id="card_${r.id}">
+    <div class="list-card-top">
+      <div>
+        <div class="tour-code">${r.tourCode} ${tripBadge}</div>
+        <div class="trip-name">${r.tripName}</div>
+      </div>
+      <div class="status-pill ${r.status}">${statusLabel}</div>
+    </div>
+    <div class="list-card-body">
+      <div class="info-grid">
+        <div class="info-item"><div class="lbl">Date</div><div class="val">${r.dates}</div></div>
+        <div class="info-item"><div class="lbl">Car Type</div><div class="val">${r.carType}</div></div>
+        <div class="info-item"><div class="lbl">ဧည့်သည်</div><div class="val">${r.pax} ဦး</div></div>
+        <div class="info-item"><div class="lbl">ဆက်သွယ်ရန်</div><div class="val">${r.contactName} | ${r.contactPhone}</div></div>
+        <div class="info-item"><div class="lbl">ကြိုမည့်</div><div class="val">${r.pickup}</div></div>
+        <div class="info-item"><div class="lbl">ငွေပေးချေမှု</div><div class="val">${r.payment} — ${fmt(r.price)} Ks</div></div>
+      </div>
+
+      ${r.status === 'approved' ? buildApprovedSummary(r) : ''}
+
+      <div class="expand-toggle" onclick="toggleDetail(${r.id})" id="toggleLbl_${r.id}">
+        ${r.status==='pending' ? '👇 Driver / Car ရွေးချယ်ရန် ဖွင့်ရန်' : '👇 အသေးစိတ် ပြင်ရန်'}
+      </div>
+
+      <div class="detail-panel" id="detail_${r.id}">
+        ${buildDetailForm(r)}
+      </div>
+    </div>
+  </div>`;
+}
+
+function buildApprovedSummary(r){
+  const jobLink = `https://script.google.com/macros/s/XXXXX/exec?job=${encodeURIComponent(r.tourCode)}`;
+  return `
+  <div class="approved-box">
+    <div class="title">✅ Approved — Driver: ${r.assignedDriver} (${r.assignedCar})</div>
+    <div class="link-row">
+      <input type="text" readonly value="${jobLink}" id="link_${r.id}">
+      <button class="btn-copy" onclick="copyLink(${r.id}, this)">📋 Copy</button>
+    </div>
+    <div class="send-options">
+      <div class="send-opt" onclick="openSend('${r.driverPhone}','viber')">📱 Viber ဖွင့်</div>
+      <div class="send-opt" onclick="openSend('${r.driverPhone}','messenger')">💬 Messenger</div>
+    </div>
+  </div>`;
+}
+
+function buildDetailForm(r){
+  const carOptions = CARS.map(c=>`<option value="${c.carNo}" data-driver-id="${c.defaultDriverId||''}" data-driver-name="${c.defaultDriverName||''}" data-driver-phone="${c.defaultDriverPhone||''}" ${r.assignedCar===c.carNo?'selected':''}>${c.carNo} — ${c.model}</option>`).join('');
+  const driverOptions = DRIVERS.map(d=>`<option value="${d.id}" data-name="${d.name}" data-phone="${d.phone}" ${r.assignedDriver===d.name?'selected':''}>${d.name} (${d.phone})</option>`).join('');
+
+  return `
+    <div class="owner-toggle">
+      <div class="owner-btn ${r.carOwner==='apex'?'active':''}" onclick="setOwner(${r.id},'apex',this)">🚗 Apex Car</div>
+      <div class="owner-btn ${r.carOwner==='partner'?'active':''}" onclick="setOwner(${r.id},'partner',this)">🤝 Partner Car</div>
+    </div>
+
+    <div id="apexFields_${r.id}" class="${r.carOwner==='partner'?'hidden':''}">
+      <div class="field">
+        <label>ကားနံပါတ်</label>
+        <select id="carSel_${r.id}" onchange="onCarSelect(${r.id})">
+          <option value="">— ရွေးပါ —</option>
+          ${carOptions}
+          <option value="manual">အခြား (Manual ရိုက်)</option>
+        </select>
+      </div>
+      <div class="field">
+        <label>ယာဉ်မောင်း</label>
+        <select id="driverSel_${r.id}" onchange="onDriverSelect(${r.id})">
+          <option value="">— ရွေးပါ —</option>
+          ${driverOptions}
+          <option value="manual">အခြား (Manual ရိုက်)</option>
+        </select>
+      </div>
+    </div>
+
+    <div id="partnerFields_${r.id}" class="${r.carOwner==='apex'?'hidden':''}">
+      <div class="row-2">
+        <div class="field"><label>ကားနံပါတ် (Partner)</label><input type="text" id="partnerCarNo_${r.id}" placeholder="ဥပမာ YGN-1234" value="${r.carOwner==='partner'?r.assignedCar.replace(' (Partner)',''):''}"></div>
+        <div class="field"><label>ကားအမျိုးအစား</label><input type="text" id="partnerCarModel_${r.id}" placeholder="Model"></div>
+      </div>
+      <div class="row-2">
+        <div class="field"><label>ယာဉ်မောင်းနာမည်</label><input type="text" id="partnerDriverName_${r.id}" placeholder="နာမည်" value="${r.carOwner==='partner'?r.assignedDriver.replace(' (Partner)',''):''}"></div>
+        <div class="field"><label>ဖုန်းနံပါတ်</label><input type="tel" id="partnerDriverPhone_${r.id}" placeholder="09-XXXXXXXX" value="${r.carOwner==='partner'?r.driverPhone:''}"></div>
+      </div>
+    </div>
+
+    <div class="fee-grid">
+      <div class="field"><label>ဆီဖိုး ကြိုထုတ်ပမာဏ</label><input type="number" id="fuelAdv_${r.id}" placeholder="0" value="${r.fuelAdvance}"></div>
+      <div class="field"><label>လမ်းကြေး ကြိုထုတ်ပမာဏ</label><input type="number" id="tollAdv_${r.id}" placeholder="0" value="${r.tollAdvance}"></div>
+    </div>
+
+    <div style="margin-top:10px;">
+      <div style="font-size:11px;font-weight:700;color:#555;margin-bottom:6px;text-transform:uppercase;letter-spacing:.4px;">👨‍✈️ မောင်းကြေး Settlement</div>
+      <div style="display:flex;gap:6px;">
+        <div onclick="setConfirmSettlement(${r.id},'advance')" style="flex:1;padding:10px 4px;border-radius:10px;text-align:center;font-size:11px;font-weight:700;cursor:pointer;border:2px solid ${(!r.settlement||r.settlement==='advance')?'#4CAF50':'#E0E0E0'};background:${(!r.settlement||r.settlement==='advance')?'#E8F5E9':'#FAFAFA'};color:${(!r.settlement||r.settlement==='advance')?'#2E7D32':'#666'};">✅ ကြိုထုတ်ပေး<br><span style="font-size:9px;font-weight:400;">(Default)</span></div>
+        <div onclick="setConfirmSettlement(${r.id},'collect')" style="flex:1;padding:10px 4px;border-radius:10px;text-align:center;font-size:11px;font-weight:700;cursor:pointer;border:2px solid ${r.settlement==='collect'?'#FF9800':'#E0E0E0'};background:${r.settlement==='collect'?'#FFF3E0':'#FAFAFA'};color:${r.settlement==='collect'?'#E65100':'#666'};">💵 ကောက်ငွေမှ<br><span style="font-size:9px;font-weight:400;">ယူရန်</span></div>
+        <div onclick="setConfirmSettlement(${r.id},'office')" style="flex:1;padding:10px 4px;border-radius:10px;text-align:center;font-size:11px;font-weight:700;cursor:pointer;border:2px solid ${r.settlement==='office'?'#2E75B6':'#E0E0E0'};background:${r.settlement==='office'?'#EEF4FB':'#FAFAFA'};color:${r.settlement==='office'?'#1F4E79':'#666'};">🏢 ရုံးဖွင့်မှ<br><span style="font-size:9px;font-weight:400;">ထုတ်ရန်</span></div>
+      </div>
+      ${(!r.settlement||r.settlement==='advance') ? `<div style="font-size:11px;color:#2E7D32;background:#E8F5E9;border-radius:8px;padding:6px 10px;margin-top:6px;">✅ ကြိုထုတ်ပေးမည် — Job Order Form ထဲ ပမာဏ ပြ</div>` : ''}
+      ${r.settlement==='collect' ? `<div style="font-size:11px;color:#E65100;background:#FFF3E0;border-radius:8px;padding:6px 10px;margin-top:6px;">💡 Trip ပြီးရင် ကောက်ငွေထဲမှ မောင်းကြေး နုတ်မည် — ရုံးထပ်ထုတ်စရာမလို</div>` : ''}
+      ${r.settlement==='office' ? `<div style="font-size:11px;color:#1F4E79;background:#EEF4FB;border-radius:8px;padding:6px 10px;margin-top:6px;">🏢 ယာဉ်မောင်း ရုံးပြန်ရောက်မှ ထုတ်ပေးမည် — ရုံး Petty Cash ကနေ ထပ်ထုတ်ရမည်</div>` : ''}
+    </div>
+
+    <div class="btn-row">
+      ${r.status !== 'approved' ? `<button class="btn btn-approve" onclick="approveRecord(${r.id})">✅ Approve</button>` : `<button class="btn btn-edit" onclick="approveRecord(${r.id})">✏️ ပြင်ပြီး Update</button>`}
+      ${r.status !== 'rejected' ? `<button class="btn btn-reject" onclick="rejectRecord(${r.id})">❌ Reject</button>` : ''}
+    </div>
+  `;
+}
+
+// ══════════════════════════════════════════
+// INTERACTIONS
+// ══════════════════════════════════════════
+function toggleDetail(id){
+  const panel = document.getElementById('detail_'+id);
+  const lbl = document.getElementById('toggleLbl_'+id);
+  const isOpen = panel.classList.toggle('open');
+  lbl.textContent = isOpen ? '👆 ပိတ်ရန်' : (records.find(r=>r.id===id).status==='pending' ? '👇 Driver / Car ရွေးချယ်ရန် ဖွင့်ရန်' : '👇 အသေးစိတ် ပြင်ရန်');
+}
+
+function setConfirmSettlement(id, type){
+  const r = records.find(x=>x.id===id);
+  r.settlement = type;
+  const wasOpen = document.getElementById('detail_'+id).classList.contains('open');
+  render();
+  if(wasOpen){
+    document.getElementById('detail_'+id).classList.add('open');
+    document.getElementById('toggleLbl_'+id).textContent = '👆 ပိတ်ရန်';
+  }
+}
+
+function setOwner(id, type, el){
+  const r = records.find(x=>x.id===id);
+  r.carOwner = type;
+  el.parentElement.querySelectorAll('.owner-btn').forEach(b=>b.classList.remove('active'));
+  el.classList.add('active');
+  document.getElementById('apexFields_'+id).classList.toggle('hidden', type!=='apex');
+  document.getElementById('partnerFields_'+id).classList.toggle('hidden', type!=='partner');
+}
+
+function onCarSelect(id){
+  const sel = document.getElementById('carSel_'+id);
+  const carNo = sel.value;
+  if(!carNo) return;
+  const r = records.find(x=>x.id===id);
+  r.assignedCar = carNo;
+
+  // Default Driver auto-fill
+  const opt = sel.options[sel.selectedIndex];
+  const defDriverId = opt.dataset.driverId;
+  const defDriverName = opt.dataset.driverName;
+  const defDriverPhone = opt.dataset.driverPhone;
+
+  if(defDriverId && defDriverName){
+    r.assignedDriver = defDriverName;
+    r.driverPhone = defDriverPhone;
+    // Driver dropdown ကို auto-select
+    const driverSel = document.getElementById('driverSel_'+id);
+    if(driverSel){
+      for(let i=0; i<driverSel.options.length; i++){
+        if(driverSel.options[i].dataset.name === defDriverName){
+          driverSel.selectedIndex = i;
+          break;
+        }
+      }
+    }
+    showToast('✅ Default Driver: '+defDriverName+' Auto-fill ပြီး');
+  }
+}
+
+function onDriverSelect(id){
+  const sel = document.getElementById('driverSel_'+id);
+  const opt = sel.options[sel.selectedIndex];
+  if(!opt || !opt.dataset.name) return;
+  const r = records.find(x=>x.id===id);
+  r.assignedDriver = opt.dataset.name;
+  r.driverPhone = opt.dataset.phone;
+}
+
+function approveRecord(id){
+  const r = records.find(x=>x.id===id);
+
+  if(r.carOwner === 'apex'){
+    const carSel = document.getElementById('carSel_'+id);
+    const driverSel = document.getElementById('driverSel_'+id);
+    if(!carSel.value){ showToast('⚠️ ကားနံပါတ် ရွေးပေးပါ'); return; }
+    if(!driverSel.value){ showToast('⚠️ ယာဉ်မောင်း ရွေးပေးပါ'); return; }
+    r.assignedCar = carSel.value;
+    const driverOpt = driverSel.options[driverSel.selectedIndex];
+    r.assignedDriver = driverOpt.dataset.name;
+    r.driverPhone = driverOpt.dataset.phone;
+  } else {
+    const carNo = document.getElementById('partnerCarNo_'+id).value;
+    const driverName = document.getElementById('partnerDriverName_'+id).value;
+    const driverPhone = document.getElementById('partnerDriverPhone_'+id).value;
+    if(!carNo || !driverName){ showToast('⚠️ Partner ကား/ယာဉ်မောင်း အချက်အလက် ဖြည့်ပေးပါ'); return; }
+    r.assignedCar = carNo + ' (Partner)';
+    r.assignedDriver = driverName + ' (Partner)';
+    r.driverPhone = driverPhone;
+  }
+
+  r.fuelAdvance = document.getElementById('fuelAdv_'+id).value || 0;
+  r.tollAdvance = document.getElementById('tollAdv_'+id).value || 0;
+  r.status = 'approved';
+  const settlementLabel = {advance:'ကြိုထုတ်ပေး', collect:'ကောက်ငွေမှယူ', office:'ရုံးဖွင့်မှထုတ်'}[r.settlement||'advance'];
+
+  // Sheet ထဲ Save
+  fetch(CONFIRMATION_WEBAPP_URL, {
+    method: 'POST',
+    mode: 'no-cors',
+    headers: {'Content-Type':'text/plain'},
+    body: JSON.stringify({
+      action: 'approveConfirmation',
+      tourCode: r.tourCode,
+      fuelAdvance: r.fuelAdvance,
+      tollAdvance: r.tollAdvance,
+      settlement: r.settlement || 'advance',
+      carOwner: r.carOwner,
+      assignedCarNo: r.assignedCar,
+      assignedDriver: r.assignedDriver,
+      driverPhone: r.driverPhone,
+      approvedBy: 'Admin',
+    })
+  });
+
+  showToast('✅ '+r.tourCode+' Approve ပြီး | မောင်းကြေး: '+settlementLabel+' | Sheet Save ပြီး');
+  render();
+}
+
+function rejectRecord(id){
+  const r = records.find(x=>x.id===id);
+  if(!confirm(r.tourCode+' ကို Reject လုပ်မှာ သေချာပါသလား?')) return;
+  r.status = 'rejected';
+  showToast('❌ '+r.tourCode+' — Reject လုပ်ပြီးပါပြီ');
+  render();
+}
+
+function copyLink(id, btn){
+  const input = document.getElementById('link_'+id);
+  input.select();
+  document.execCommand('copy');
+  btn.textContent = '✅ Copied';
+  btn.classList.add('copied');
+  showToast('📋 Job Order Link Copy ပြီးပါပြီ — ယာဉ်မောင်းဆီ ပို့ပါ');
+  setTimeout(()=>{ btn.textContent='📋 Copy'; btn.classList.remove('copied'); }, 2000);
+}
+
+function openSend(phone, app){
+  if(app === 'viber'){
+    showToast('📱 Viber ဖွင့်ပါမည် — Link ကို Paste ပြီး ပို့ပါ');
+    // Viber doesn't support direct deep-link compose reliably across all devices.
+    // In production this could open viber://chat?number=... where supported.
+  } else {
+    showToast('💬 Messenger ဖွင့်ပါမည် — Link ကို Paste ပြီး ပို့ပါ');
+  }
+}
+
+function fmt(n){ return Number(n).toLocaleString('en-US'); }
+function showToast(msg){
+  const t=document.getElementById('toast');
+  t.textContent=msg; t.classList.add('show');
+  setTimeout(()=>t.classList.remove('show'),3000);
+}
+
+// INIT
+loadSheetData();
+</script>
+</body>
+</html>

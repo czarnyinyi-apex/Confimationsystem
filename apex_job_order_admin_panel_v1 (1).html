@@ -1,0 +1,545 @@
+<!DOCTYPE html>
+<html lang="my">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Apex — Job Order Admin Panel</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0;}
+body{font-family:'Segoe UI',Arial,sans-serif;background:#F0F4F8;color:#222;min-height:100vh;}
+
+.header{background:linear-gradient(135deg,#1F4E79,#2E75B6);padding:14px 20px;text-align:center;position:sticky;top:0;z-index:100;box-shadow:0 2px 8px rgba(0,0,0,.2);}
+.header h1{color:#fff;font-size:16px;font-weight:700;}
+.header p{color:#BDD7EE;font-size:11px;margin-top:2px;}
+
+.stats-bar{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;padding:12px;max-width:900px;margin:0 auto;}
+.stat-box{background:#fff;border-radius:12px;padding:10px 6px;text-align:center;box-shadow:0 2px 8px rgba(0,0,0,.06);}
+.stat-box .num{font-size:18px;font-weight:700;color:#1F4E79;}
+.stat-box .lbl{font-size:10px;color:#888;margin-top:2px;}
+.stat-box.pending .num{color:#FF9800;}
+.stat-box.approved .num{color:#4CAF50;}
+.stat-box.rejected .num{color:#E53935;}
+
+.filter-bar{display:flex;gap:6px;padding:0 12px 12px;max-width:900px;margin:0 auto;overflow-x:auto;}
+.filter-chip{padding:6px 14px;border-radius:20px;background:#fff;border:1.5px solid #E0E0E0;font-size:12px;font-weight:700;color:#666;cursor:pointer;white-space:nowrap;}
+.filter-chip.active{background:#1F4E79;border-color:#1F4E79;color:#fff;}
+
+.container{max-width:900px;margin:0 auto;padding:0 12px 30px;}
+
+.list-card{background:#fff;border-radius:14px;box-shadow:0 2px 10px rgba(0,0,0,.08);margin-bottom:12px;overflow:hidden;}
+.list-card-top{padding:12px 16px;border-bottom:1px solid #F0F0F0;display:flex;justify-content:space-between;align-items:flex-start;}
+.tour-code{font-size:14px;font-weight:700;color:#1F4E79;}
+.trip-name{font-size:12px;color:#555;margin-top:2px;}
+.driver-line{font-size:11px;color:#888;margin-top:2px;}
+.status-pill{padding:3px 10px;border-radius:12px;font-size:10px;font-weight:700;flex-shrink:0;}
+.status-pill.pending{background:#FFF3E0;color:#E65100;}
+.status-pill.approved{background:#E8F5E9;color:#2E7D32;}
+.status-pill.rejected{background:#FFEBEE;color:#C62828;}
+
+.list-card-body{padding:12px 16px;}
+
+.day-progress{display:flex;gap:6px;margin-bottom:10px;flex-wrap:wrap;}
+.day-pip{flex:1;min-width:60px;text-align:center;padding:6px 4px;border-radius:8px;font-size:11px;font-weight:700;}
+.day-pip.done{background:#E8F5E9;color:#2E7D32;}
+.day-pip.pending{background:#FFEBEE;color:#C62828;}
+.day-pip.final{background:#FFF3E0;color:#E65100;}
+.day-pip.final.done{background:#1F4E79;color:#fff;}
+
+.expand-toggle{font-size:11px;color:#2E75B6;font-weight:700;cursor:pointer;text-align:center;padding:8px;border-top:1px solid #F0F0F0;margin-top:4px;}
+
+.detail-panel{display:none;border-top:1px dashed #E0E0E0;margin-top:10px;padding-top:10px;}
+.detail-panel.open{display:block;}
+
+.sub-card{background:#F8FBFF;border:1.5px solid #D0E4F7;border-radius:10px;padding:10px 12px;margin-bottom:10px;}
+.sub-card-title{font-size:12px;font-weight:700;color:#1F4E79;margin-bottom:8px;display:flex;justify-content:space-between;align-items:center;}
+
+.kv-row{display:flex;justify-content:space-between;padding:4px 0;font-size:12px;border-bottom:1px solid #E8F0F8;}
+.kv-row:last-child{border-bottom:none;}
+.kv-row .k{color:#777;}
+.kv-row .v{font-weight:700;color:#1F4E79;}
+
+.remark-display{background:#FFF8E1;border-radius:8px;padding:8px 10px;font-size:11px;color:#795548;margin-top:6px;}
+.remark-display .lbl{font-weight:700;color:#E65100;margin-bottom:2px;}
+
+.field{margin-bottom:10px;}
+.field:last-child{margin-bottom:0;}
+.field label{display:block;font-size:11px;font-weight:700;color:#555;margin-bottom:3px;text-transform:uppercase;letter-spacing:.4px;}
+.field input,.field select{width:100%;padding:9px 12px;border:2px solid #E0E0E0;border-radius:10px;font-size:13px;color:#222;background:#FAFAFA;outline:none;font-family:inherit;}
+.field input:focus,.field select:focus{border-color:#2E75B6;background:#fff;}
+
+.row-2{display:grid;grid-template-columns:1fr 1fr;gap:8px;}
+
+.calc-box{background:#EEF4FB;border:2px solid #BDD7EE;border-radius:10px;padding:10px 14px;margin-top:8px;}
+.calc-row{display:flex;justify-content:space-between;align-items:center;padding:5px 0;font-size:13px;border-bottom:1px solid #D0E4F7;}
+.calc-row:last-child{border-bottom:none;}
+.calc-row .lbl{color:#555;}
+.calc-row .val{font-weight:700;color:#1F4E79;}
+.calc-row.highlight .val{color:#FF9800;font-size:14px;}
+.calc-row.green .val{color:#4CAF50;}
+.calc-row.red .val{color:#E53935;}
+
+.btn-row{display:flex;gap:8px;margin-top:12px;}
+.btn{flex:1;padding:11px;border:none;border-radius:10px;font-size:13px;font-weight:700;cursor:pointer;}
+.btn-approve{background:linear-gradient(135deg,#4CAF50,#66BB6A);color:#fff;}
+.btn-reject{background:#FFEBEE;color:#C62828;border:1.5px solid #FFCDD2;}
+.btn-edit{background:#EEF4FB;color:#1F4E79;border:1.5px solid #BDD7EE;}
+
+.trip-record-box{background:#E8F5E9;border:1.5px solid #A5D6A7;border-radius:10px;padding:12px;margin-top:10px;}
+.trip-record-box .title{font-size:12px;font-weight:700;color:#2E7D32;margin-bottom:6px;}
+.trip-record-box .note{font-size:11px;color:#558B5C;}
+
+.empty-state{text-align:center;padding:50px 20px;color:#999;}
+.empty-state .icon{font-size:40px;margin-bottom:10px;}
+
+.toast{position:fixed;bottom:20px;left:50%;transform:translateX(-50%);background:#1F4E79;color:#fff;padding:10px 22px;border-radius:20px;font-size:13px;font-weight:600;z-index:9999;opacity:0;transition:opacity .3s;pointer-events:none;white-space:nowrap;max-width:90%;text-align:center;}
+.toast.show{opacity:1;}
+
+.hidden{display:none!important;}
+.badge{display:inline-block;padding:2px 8px;border-radius:10px;font-size:10px;font-weight:700;}
+.badge-city{background:#BDD7EE;color:#1F4E79;}
+.badge-hw{background:#FFE0B2;color:#E65100;}
+
+@media(max-width:480px){
+  .stats-bar{grid-template-columns:1fr 1fr;}
+  .row-2{grid-template-columns:1fr;}
+}
+</style>
+</head>
+<body>
+
+<div class="toast" id="toast"></div>
+
+<div class="header">
+  <h1>🔧 APEX CAR RENTAL</h1>
+  <p>Job Order Admin Panel — Operation Team</p>
+</div>
+
+<div class="stats-bar">
+  <div class="stat-box"><div class="num" id="statTotal">0</div><div class="lbl">Total</div></div>
+  <div class="stat-box pending"><div class="num" id="statPending">0</div><div class="lbl">Pending</div></div>
+  <div class="stat-box approved"><div class="num" id="statApproved">0</div><div class="lbl">Approved</div></div>
+  <div class="stat-box rejected"><div class="num" id="statRejected">0</div><div class="lbl">Rejected</div></div>
+</div>
+
+<div class="filter-bar">
+  <div class="filter-chip active" data-f="all" onclick="setFilter('all',this)">အားလုံး</div>
+  <div class="filter-chip" data-f="pending" onclick="setFilter('pending',this)">🟡 Pending</div>
+  <div class="filter-chip" data-f="approved" onclick="setFilter('approved',this)">✅ Approved</div>
+  <div class="filter-chip" data-f="rejected" onclick="setFilter('rejected',this)">❌ Rejected</div>
+</div>
+
+<div class="container">
+  <div class="list-card" style="margin-bottom:14px;">
+    <div class="list-card-top" style="background:#FFF3E0;">
+      <div>
+        <div class="tour-code" style="color:#E65100;">⚙️ Apex ဆီ ဈေးနှုန်း Settings</div>
+        <div class="trip-name">ဒီလအတွက် Default Rate သတ်မှတ်ပါ</div>
+      </div>
+    </div>
+    <div class="list-card-body">
+      <div class="row-2">
+        <div class="field"><label>ဒီလ Apex ဆီ ဈေး (Ks/Gal)</label><input type="number" id="globalApexRate" placeholder="ဥပမာ 4500" oninput="onGlobalRateChange()"></div>
+        <div class="field"><label>သက်ရောက်မည့်လ</label><input type="text" id="globalRateMonth" placeholder="ဥပမာ June 2026" value="June 2026"></div>
+      </div>
+      <div style="font-size:11px;color:#888;margin-top:4px;">💡 ဒီနေရာမှာ ဈေးထည့်ရင် Record အားလုံးအတွက် Auto-apply ဖြစ်ပါမည်။ Trip တစ်ခုချင်းစီအတွက် ဈေးကွဲရင် Record Detail ထဲက "Override" Toggle ကို သုံးနိုင်ပါသည်။</div>
+    </div>
+  </div>
+</div>
+
+<div class="container" id="listContainer"></div>
+
+<script>
+let globalApexRate = 0;
+
+let records = [];
+let currentFilter = 'all';
+
+const CONFIRMATION_WEBAPP_URL = 'https://script.google.com/macros/s/AKfycbxA4Oa48IJNkjk0uvcw9G90MhHL8hhsgE0zszGi2IksVwd-Uf8DOiMbviedMOr6iADVjA/exec';
+
+// ══════════════════════════════════════════
+// LOAD JOB ORDER PENDING FROM SHEET
+// ══════════════════════════════════════════
+async function loadJobOrderData() {
+  try {
+    showToast('⏳ Job Order data ဆွဲနေသည်...');
+    const resp = await fetch(CONFIRMATION_WEBAPP_URL + '?action=getJobOrderPending');
+    const sheetRecords = await resp.json();
+
+    records = sheetRecords.map((r, idx) => {
+      const daysData = r.daysData || {};
+      // daysSubmitted — daysData ထဲ data ရှိတဲ့ day တွေကို submitted အဖြစ် မှတ်
+      const daysSubmitted = {};
+      for (let d = 1; d <= (r.totalDays || 1); d++) {
+        daysSubmitted[d] = daysData[d] && (daysData[d].fuel?.length > 0 || daysData[d].startKm);
+      }
+      return {
+        id: idx + 1,
+        tourCode: r.tourCode,
+        tripName: r.tripName || '',
+        tripType: r.tripType || 'city',
+        totalDays: r.totalDays || 1,
+        carNo: r.carNo || '',
+        driver: r.driver || '',
+        clientName: r.clientName || '',
+        daysSubmitted,
+        finalSubmitted: r.finalSubmitted === true || r.finalSubmitted === 'TRUE',
+        status: (r.status || 'PENDING').toLowerCase(),
+        collectAmount: r.collectAmount || 0,
+        collectMethod: r.collectMethod || 'Cash',
+        fuelAdvance: r.fuelAdvance || 0,
+        tollAdvance: r.tollAdvance || 0,
+        driverFeeTotal: r.driverFeeTotal || 0,
+        settlement: r.settlement || 'advance',
+        confirmationSettlement: r.settlement || 'advance',
+        days: daysData,
+        apexFuelLtr: r.apexFuelLtr || 0,
+        apexFuelAmt: r.apexFuelAmt || 0,
+        apexRateOverride: false,
+        apexRateCustom: r.apexRate || 0,
+      };
+    });
+
+    if (records.length === 0) {
+      showToast('ℹ️ JobOrder_Pending Sheet ထဲ data မရှိသေးပါ');
+    } else {
+      showToast('✅ Job Order Records ' + records.length + ' ခု Load ပြီး');
+    }
+    render();
+  } catch(err) {
+    showToast('⚠️ Connection Error — Local browser မှ ဖွင့်ပါ');
+    // Fallback demo
+    records = [{
+      id:1, tourCode:'DEMO-001', tripName:'Demo (Offline)', tripType:'highway',
+      totalDays:1, carNo:'9D/8865', driver:'Sample Driver', clientName:'Test',
+      daysSubmitted:{1:true}, finalSubmitted:true, status:'pending',
+      collectAmount:0, collectMethod:'Cash', fuelAdvance:0, tollAdvance:0,
+      driverFeeTotal:0, settlement:'advance', confirmationSettlement:'advance',
+      days:{1:{fuel:[],toll:[],startKm:'',endKm:'',remark:''}},
+      apexFuelLtr:0, apexFuelAmt:0, apexRateOverride:false, apexRateCustom:0,
+    }];
+    render();
+  }
+}
+
+
+
+function render(){
+  updateStats();
+  const wrap = document.getElementById('listContainer');
+  const filtered = currentFilter==='all' ? records : records.filter(r=>r.status===currentFilter);
+  if(filtered.length === 0){
+    wrap.innerHTML = `<div class="empty-state"><div class="icon">📭</div><div>ဒီ Filter အတွက် Record မရှိပါ</div></div>`;
+    return;
+  }
+  wrap.innerHTML = filtered.map(r => buildCard(r)).join('');
+}
+
+function updateStats(){
+  document.getElementById('statTotal').textContent = records.length;
+  document.getElementById('statPending').textContent = records.filter(r=>r.status==='pending').length;
+  document.getElementById('statApproved').textContent = records.filter(r=>r.status==='approved').length;
+  document.getElementById('statRejected').textContent = records.filter(r=>r.status==='rejected').length;
+}
+
+function setFilter(f, el){
+  currentFilter = f;
+  document.querySelectorAll('.filter-chip').forEach(c=>c.classList.remove('active'));
+  el.classList.add('active');
+  render();
+}
+
+function buildCard(r){
+  const statusLabel = {pending:'🟡 Pending', approved:'✅ Approved', rejected:'❌ Rejected'}[r.status];
+  const tripBadge = r.tripType==='city' ? '<span class="badge badge-city">🏙️ City</span>' : '<span class="badge badge-hw">🛣️ Highway</span>';
+
+  let dayPips = '';
+  for(let d=1; d<=r.totalDays; d++){
+    const done = r.daysSubmitted[d];
+    dayPips += `<div class="day-pip ${done?'done':'pending'}">Day ${d} ${done?'✓':'○'}</div>`;
+  }
+  dayPips += `<div class="day-pip final ${r.finalSubmitted?'done':''}">${r.finalSubmitted?'🏁 Final ✓':'🏁 Final ○'}</div>`;
+
+  return `
+  <div class="list-card" id="card_${r.id}">
+    <div class="list-card-top">
+      <div>
+        <div class="tour-code">${r.tourCode} ${tripBadge}</div>
+        <div class="trip-name">${r.tripName}</div>
+        <div class="driver-line">🚗 ${r.carNo} | 👨‍✈️ ${r.driver}</div>
+      </div>
+      <div class="status-pill ${r.status}">${statusLabel}</div>
+    </div>
+    <div class="list-card-body">
+      <div class="day-progress">${dayPips}</div>
+      ${!r.finalSubmitted ? `<div style="font-size:11px;color:#C62828;margin-bottom:8px;">⚠️ ယာဉ်မောင်း "All Day Final Submit" မလုပ်ရသေးပါ — Approve မစီစဉ်ရသေးပါ</div>` : ''}
+      <div class="expand-toggle" onclick="toggleDetail(${r.id})" id="toggleLbl_${r.id}">👇 အသေးစိတ် Review လုပ်ရန်</div>
+      <div class="detail-panel" id="detail_${r.id}">${buildDetailContent(r)}</div>
+    </div>
+  </div>`;
+}
+
+function buildDetailContent(r){
+  let daysHtml = '';
+  for(let d=1; d<=r.totalDays; d++){
+    const day = r.days[d];
+    const fuelTotal = day.fuel.reduce((s,f)=>s+f.amt,0);
+    const fuelLtr = day.fuel.reduce((s,f)=>s+f.ltr,0);
+    const tollTotal = day.toll.reduce((s,t)=>s+t,0);
+    const km = (day.startKm && day.endKm) ? (day.endKm - day.startKm) : 0;
+
+    daysHtml += `
+    <div class="sub-card">
+      <div class="sub-card-title">📅 Day ${d} ${r.daysSubmitted[d] ? '<span style="color:#4CAF50;">✓ Submitted</span>' : '<span style="color:#C62828;">⏳ Not yet</span>'}</div>
+      ${r.daysSubmitted[d] ? `
+        <div class="kv-row"><span class="k">⛽ ဆီဖိုး</span><span class="v">${fmt(fuelTotal)} Ks (${fuelLtr} Ltr)</span></div>
+        ${day.fuel.map((f,fi)=>`
+          <div class="kv-row" style="align-items:center;">
+            <span class="k">— ${f.type} (${f.pay})</span>
+            <input type="number" value="${f.amt}" oninput="onEditFuelAmt(${r.id},${d},${fi},this.value)" style="width:90px;padding:4px 6px;border:1.5px solid #D0E4F7;border-radius:6px;font-size:12px;text-align:right;font-weight:700;color:#1F4E79;">
+          </div>`).join('')}
+        <div class="kv-row"><span class="k">🛣️ လမ်းကြေး</span><span class="v">${fmt(tollTotal)} Ks</span></div>
+        <div class="kv-row" style="align-items:center;">
+          <span class="k">📍 Start Km → End Km</span>
+          <span>
+            <input type="number" value="${day.startKm}" oninput="onEditKm(${r.id},${d},'start',this.value)" style="width:75px;padding:4px 6px;border:1.5px solid #D0E4F7;border-radius:6px;font-size:12px;text-align:right;">
+            →
+            <input type="number" value="${day.endKm}" oninput="onEditKm(${r.id},${d},'end',this.value)" style="width:75px;padding:4px 6px;border:1.5px solid #D0E4F7;border-radius:6px;font-size:12px;text-align:right;">
+          </span>
+        </div>
+        ${day.remark ? `<div class="remark-display"><div class="lbl">💡 ယာဉ်မောင်း မှတ်ချက်</div>${day.remark}</div>` : ''}
+      ` : `<div style="font-size:11px;color:#999;">ဒီ Day အတွက် Data မရှိသေးပါ</div>`}
+    </div>`;
+  }
+
+  const totalFuelAmt = Object.values(r.days).reduce((s,d)=>s+d.fuel.reduce((s2,f)=>s2+f.amt,0),0) + (r.apexFuelAmt||0);
+  const totalCashFuelAmt = Object.values(r.days).reduce((s,d)=>s+d.fuel.filter(f=>f.pay==='Cash').reduce((s2,f)=>s2+f.amt,0),0);
+  const totalToll = Object.values(r.days).reduce((s,d)=>s+d.toll.reduce((s2,t)=>s2+t,0),0);
+  const firstStart = r.days[1]?.startKm || 0;
+  const lastEnd = r.days[r.totalDays]?.endKm || 0;
+  const totalKm = lastEnd - firstStart;
+  const fuelReturn = r.fuelAdvance - totalCashFuelAmt;
+  const tollReturn = r.tollAdvance - totalToll;
+  const totalFuelLtr = Object.values(r.days).reduce((s,d)=>s+d.fuel.reduce((s2,f)=>s2+f.ltr,0),0) + (r.apexFuelLtr||0);
+  const totalFuelGal = totalFuelLtr / 4.54;
+  const kmPerL = (totalKm>0 && totalFuelLtr>0) ? (totalKm/totalFuelLtr).toFixed(1) : '—';
+  const kmPerGal = (totalKm>0 && totalFuelGal>0) ? (totalKm/totalFuelGal).toFixed(1) : '—';
+  const profit = r.collectAmount - totalFuelAmt - totalToll - r.driverFeeTotal;
+  const profitPct = r.collectAmount>0 ? ((profit/r.collectAmount)*100).toFixed(1) : '0.0';
+
+  return `
+    ${daysHtml}
+
+    <div class="sub-card">
+      <div class="sub-card-title">🔴 Apex အရံဆီ — Operation ဖြည့်ရန်
+        <span style="font-size:10px;font-weight:700;color:${r.apexRateOverride?'#E65100':'#2E75B6'};cursor:pointer;" onclick="toggleRateOverride(${r.id})">${r.apexRateOverride?'🔓 Override ON':'🔒 Default Rate'}</span>
+      </div>
+      <div class="row-2">
+        <div class="field"><label>Gallon</label><input type="number" id="apexGal_${r.id}" placeholder="0.00" value="${r.apexFuelLtr ? (r.apexFuelLtr/4.54).toFixed(2) : ''}" oninput="onApexGal(${r.id})"></div>
+        <div class="field"><label>Liter (Auto)</label><input type="number" id="apexLtr_${r.id}" placeholder="0.00" value="${r.apexFuelLtr ? r.apexFuelLtr.toFixed(2) : ''}" readonly></div>
+      </div>
+      <div class="field">
+        <label>${r.apexRateOverride ? 'ဈေးနှုန်း (ဒီ Trip အတွက်သာ)' : 'ဈေးနှုန်း (Default Rate သုံးနေသည်)'}</label>
+        <input type="number" id="apexRate_${r.id}" placeholder="Ks/Gal" value="${r.apexRateOverride ? r.apexRateCustom : globalApexRate}" ${r.apexRateOverride ? `oninput="onCustomRateChange(${r.id},this.value)"` : 'readonly'}>
+      </div>
+      <div class="field"><label>ငွေပမာဏ (Auto = Gallon × Rate)</label><input type="number" id="apexAmt_${r.id}" value="${(parseFloat(document.getElementById('apexGal_'+r.id)?.value)||(r.apexFuelLtr/4.54)||0) * (r.apexRateOverride?r.apexRateCustom:globalApexRate) || ''}" readonly></div>
+      ${!globalApexRate && !r.apexRateOverride ? '<div style="font-size:10px;color:#C62828;">⚠️ Settings မှာ ဒီလ Apex ဆီ ဈေး မထည့်ရသေးပါ</div>' : ''}
+    </div>
+
+    <div class="calc-box">
+      <div class="calc-row"><span class="lbl">⛽ ဆီဖိုး စုစုပေါင်း</span><span class="val">${fmt(totalFuelAmt)} Ks</span></div>
+      <div class="calc-row"><span class="lbl">ကြိုထုတ်ပေးငွေ (ဆီ)</span><span class="val">${fmt(r.fuelAdvance)} Ks</span></div>
+      <div class="calc-row ${fuelReturn>=0?'green':'red'}"><span class="lbl">${fuelReturn>=0?'ပြန်အပ်ရန်':'ထပ်ထုတ်ရန်'}</span><span class="val">${fmt(Math.abs(fuelReturn))} Ks</span></div>
+      <div class="calc-row"><span class="lbl">🛣️ လမ်းကြေး စုစုပေါင်း</span><span class="val">${fmt(totalToll)} Ks</span></div>
+      <div class="calc-row"><span class="lbl">ကြိုထုတ်ပေးငွေ (လမ်းကြေး)</span><span class="val">${fmt(r.tollAdvance)} Ks</span></div>
+      <div class="calc-row ${tollReturn>=0?'green':'red'}"><span class="lbl">${tollReturn>=0?'ပြန်အပ်ရန်':'ထပ်ထုတ်ရန်'}</span><span class="val">${fmt(Math.abs(tollReturn))} Ks</span></div>
+      <div class="calc-row"><span class="lbl">📍 Total Km</span><span class="val">${totalKm} Km (${firstStart} → ${lastEnd})</span></div>
+      <div class="calc-row"><span class="lbl">⛽ Total Liter</span><span class="val">${totalFuelLtr.toFixed(2)} Ltr</span></div>
+      <div class="calc-row"><span class="lbl">⛽ Total Gallon</span><span class="val">${totalFuelGal.toFixed(2)} Gal</span></div>
+      <div class="calc-row"><span class="lbl">Km/L</span><span class="val">${kmPerL} Km/L</span></div>
+      <div class="calc-row"><span class="lbl">Km/Gal</span><span class="val">${kmPerGal} Km/Gal</span></div>
+      <div class="calc-row"><span class="lbl">👨‍✈️ မောင်းကြေး</span><span class="val">${fmt(r.driverFeeTotal)} Ks</span></div>
+      <div class="calc-row"><span class="lbl">💵 ကောက်ငွေ (${r.collectMethod})</span><span class="val">${fmt(r.collectAmount)} Ks</span></div>
+      <div class="calc-row highlight"><span class="lbl">📊 Profit (Income − Fuel − Toll − Driver Fee)</span><span class="val ${profit>=0?'green':'red'}">${fmt(profit)} Ks (${profitPct}%)</span></div>
+    </div>
+
+    <!-- Settlement Toggle -->
+    <div style="margin-top:10px;">
+      <div style="font-size:11px;font-weight:700;color:#555;margin-bottom:6px;text-transform:uppercase;letter-spacing:.4px;">👨‍✈️ မောင်းကြေး Settlement
+        ${r.confirmationSettlement ? `<span style="background:#BDD7EE;color:#1F4E79;border-radius:6px;padding:2px 8px;font-size:10px;font-weight:700;margin-left:6px;">Confirmation Panel: ${{'advance':'ကြိုထုတ်','collect':'ကောက်ငွေမှယူ','office':'ရုံးဖွင့်မှထုတ်'}[r.confirmationSettlement]}</span>` : ''}
+        ${r.settlement !== r.confirmationSettlement ? `<span style="background:#FFF3E0;color:#E65100;border-radius:6px;padding:2px 8px;font-size:10px;font-weight:700;margin-left:4px;">✏️ Override</span>` : ''}
+      </div>
+      <div style="display:flex;gap:6px;">
+        <div onclick="setSettlement(${r.id},'advance')" style="flex:1;padding:10px 4px;border-radius:10px;text-align:center;font-size:11px;font-weight:700;cursor:pointer;border:2px solid ${(!r.settlement||r.settlement==='advance')?'#4CAF50':'#E0E0E0'};background:${(!r.settlement||r.settlement==='advance')?'#E8F5E9':'#FAFAFA'};color:${(!r.settlement||r.settlement==='advance')?'#2E7D32':'#666'};">✅ ကြိုထုတ်ပေး<br><span style="font-size:9px;font-weight:400;">(Default)</span></div>
+        <div onclick="setSettlement(${r.id},'collect')" style="flex:1;padding:10px 4px;border-radius:10px;text-align:center;font-size:11px;font-weight:700;cursor:pointer;border:2px solid ${r.settlement==='collect'?'#FF9800':'#E0E0E0'};background:${r.settlement==='collect'?'#FFF3E0':'#FAFAFA'};color:${r.settlement==='collect'?'#E65100':'#666'};">💵 ကောက်ငွေမှ<br><span style="font-size:9px;font-weight:400;">ယူရန်</span></div>
+        <div onclick="setSettlement(${r.id},'office')" style="flex:1;padding:10px 4px;border-radius:10px;text-align:center;font-size:11px;font-weight:700;cursor:pointer;border:2px solid ${r.settlement==='office'?'#2E75B6':'#E0E0E0'};background:${r.settlement==='office'?'#EEF4FB':'#FAFAFA'};color:${r.settlement==='office'?'#1F4E79':'#666'};">🏢 ရုံးဖွင့်မှ<br><span style="font-size:9px;font-weight:400;">ထုတ်ရန်</span></div>
+      </div>
+      ${r.settlement==='collect'?`<div style="font-size:11px;color:#E65100;background:#FFF3E0;border-radius:8px;padding:6px 10px;margin-top:6px;">💡 Trip ပြီးရင် ကောက်ငွေ ${fmt(r.collectAmount)} Ks ထဲမှ မောင်းကြေး ${fmt(r.driverFeeTotal)} Ks နုတ်ပေးရမည်</div>`:''}
+      ${r.settlement==='office'?`<div style="font-size:11px;color:#1F4E79;background:#EEF4FB;border-radius:8px;padding:6px 10px;margin-top:6px;">💡 ယာဉ်မောင်း ရုံးပြန်ရောက်မှ မောင်းကြေး ${fmt(r.driverFeeTotal)} Ks ထုတ်ပေးရမည်</div>`:''}
+    </div>
+
+    <div class="field" style="margin-top:10px;">
+      <label>💰 အထွေထွေ ကုန်ကျစရိတ် (Ks) — Parking / Porter / Extra</label>
+      <input type="number" id="miscCost_${r.id}" placeholder="0">
+    </div>
+
+    <div class="field" style="margin-top:8px;">
+      <label>Admin မှတ်ချက် (Optional)</label>
+      <input type="text" id="adminRemark_${r.id}" placeholder="Review မှတ်ချက်...">
+    </div>
+
+    ${r.status === 'approved' ? `
+    <div class="trip-record-box">
+      <div class="title">✅ Trip Record ထဲ Auto-Fill ပြီးပါပြီ</div>
+      <div class="note">ကားနံပါတ် ${r.carNo} Tab ထဲမှာ Day-by-day rows + Summary line ဝင်ပြီးပါပြီ</div>
+      <div class="note" style="margin-top:6px;color:#E65100;">💡 ဒီနေရာက Data တွေကို ပြန်ပြင်ပြီး "ပြန်ပြင် Update" နှိပ်ရင် — Trip Record ထဲက ရှိပြီးသား row တွေကို အသစ်ဖြင့် ပြန်ထိုးပေးပါမည် (Overwrite)</div>
+    </div>` : ''}
+
+    <div class="btn-row">
+      ${r.status !== 'approved' ? `<button class="btn btn-approve" onclick="approveRecord(${r.id})">✅ Approve → Trip Record Fill</button>` : `<button class="btn btn-edit" onclick="approveRecord(${r.id})">✏️ ပြန်ပြင် Update → Trip Record ပြန်ထိုးမည်</button>`}
+      ${r.status !== 'rejected' ? `<button class="btn btn-reject" onclick="rejectRecord(${r.id})">❌ Reject</button>` : ''}
+    </div>
+  `;
+}
+
+function toggleDetail(id){
+  const panel = document.getElementById('detail_'+id);
+  const lbl = document.getElementById('toggleLbl_'+id);
+  const isOpen = panel.classList.toggle('open');
+  lbl.textContent = isOpen ? '👆 ပိတ်ရန်' : '👇 အသေးစိတ် Review လုပ်ရန်';
+}
+
+function onEditFuelAmt(id, day, fuelIdx, val){
+  const r = records.find(x=>x.id===id);
+  r.days[day].fuel[fuelIdx].amt = parseFloat(val)||0;
+  refreshCardKeepOpen(id);
+}
+
+function onEditKm(id, day, which, val){
+  const r = records.find(x=>x.id===id);
+  if(which==='start') r.days[day].startKm = parseFloat(val)||0;
+  else r.days[day].endKm = parseFloat(val)||0;
+  refreshCardKeepOpen(id);
+}
+
+function refreshCardKeepOpen(id){
+  const r = records.find(x=>x.id===id);
+  const wasOpen = document.getElementById('detail_'+id).classList.contains('open');
+  const activeId = document.activeElement ? document.activeElement.id : null;
+  document.getElementById('card_'+id).outerHTML = buildCard(r);
+  if(wasOpen){
+    document.getElementById('detail_'+id).classList.add('open');
+    document.getElementById('toggleLbl_'+id).textContent = '👆 ပိတ်ရန်';
+    if(activeId && document.getElementById(activeId)) document.getElementById(activeId).focus();
+  }
+}
+
+function onGlobalRateChange(){
+  globalApexRate = parseFloat(document.getElementById('globalApexRate').value)||0;
+  render();
+}
+
+function setSettlement(id, type){
+  const r = records.find(x=>x.id===id);
+  r.settlement = type;
+  refreshCardKeepOpen(id);
+}
+
+function toggleRateOverride(id, el){
+  const r = records.find(x=>x.id===id);
+  r.apexRateOverride = !r.apexRateOverride;
+  if(r.apexRateOverride && !r.apexRateCustom) r.apexRateCustom = globalApexRate;
+  refreshCardKeepOpen(id);
+}
+
+function onCustomRateChange(id, val){
+  const r = records.find(x=>x.id===id);
+  r.apexRateCustom = parseFloat(val)||0;
+  refreshCardKeepOpen(id);
+}
+
+function onApexGal(id){
+  const gal = parseFloat(document.getElementById('apexGal_'+id).value)||0;
+  const ltr = gal>0 ? (gal*4.54) : 0;
+  document.getElementById('apexLtr_'+id).value = ltr>0 ? ltr.toFixed(2) : '';
+  const r = records.find(x=>x.id===id);
+  r.apexFuelLtr = ltr;
+  const rate = r.apexRateOverride ? r.apexRateCustom : globalApexRate;
+  r.apexFuelAmt = gal * rate;
+  refreshCardKeepOpen(id);
+}
+
+const TRIP_RECORD_WEBAPP_URL = 'https://script.google.com/macros/s/AKfycbwWQN_0lgkuDrIU0pJY_gVP1-OKxVHAO49c3wXHdd9zbIGTfH4W6WV57xPoEn3qDLB9lw/exec';
+
+async function approveRecord(id){
+  const r = records.find(x=>x.id===id);
+  if(!r.finalSubmitted){
+    showToast('⚠️ ယာဉ်မောင်း All Day Final Submit မလုပ်ရသေးပါ — Approve မလုပ်နိုင်သေးပါ');
+    return;
+  }
+  r.apexFuelLtr = parseFloat(document.getElementById('apexLtr_'+id)?.value)||0;
+  r.apexFuelAmt = parseFloat(document.getElementById('apexAmt_'+id)?.value)||0;
+  // settlement is already saved live via setSettlement()
+  const settlementLabel = {advance:'ကြိုထုတ်ပေး', collect:'ကောက်ငွေမှယူ', office:'ရုံးဖွင့်မှထုတ်'}[r.settlement||'advance'];
+
+  // Build jobOrder payload for Trip Record Auto Fill
+  const jobOrderPayload = {
+    carNo: r.carNo,
+    tourCode: r.tourCode,
+    tripName: r.tripName,
+    tripType: r.tripType,
+    driver: r.driver,
+    clientName: r.clientName || '',
+    totalDays: r.totalDays,
+    price: r.collectAmount,
+    discount: 0,
+    driverFeeTotal: r.driverFeeTotal,
+    apexFuelLtr: r.apexFuelLtr,
+    apexFuelAmt: r.apexFuelAmt,
+    miscCost: parseFloat(document.getElementById('miscCost_'+id)?.value)||0,
+    settlement: r.settlement || 'advance',
+    remark: document.getElementById('adminRemark_'+id)?.value || '',
+    days: r.days
+  };
+
+  showToast('⏳ Trip Record ထဲ Auto Fill လုပ်နေသည်...');
+
+  try {
+    // Apps Script CORS workaround: use no-cors with text/plain
+    // no-cors mode → response opaque (can't read result) 
+    // but Apps Script ကို request ရောက်ပြီး execute ဖြစ်မှာပါ
+    await fetch(TRIP_RECORD_WEBAPP_URL, {
+      method: 'POST',
+      mode: 'no-cors',
+      headers: { 'Content-Type': 'text/plain' },
+      body: JSON.stringify(jobOrderPayload)
+    });
+
+    // no-cors မို့ response မဖတ်နိုင်ဘူး — 
+    // ၅ seconds နောက် Sheet ကြည့်ပြီး မှန်/မမှန် စစ်ပါ
+    r.status = 'approved';
+    showToast('✅ '+r.tourCode+' Approve ပြီး | မောင်းကြေး: '+settlementLabel+' | Trip Record Sheet ကြည့်ပါ (5 sec နောက်)');
+    render();
+  } catch(err) {
+    showToast('❌ Error: ' + err.message);
+  }
+}
+
+function rejectRecord(id){
+  const r = records.find(x=>x.id===id);
+  if(!confirm(r.tourCode+' ကို Reject လုပ်မှာ သေချာပါသလား? ယာဉ်မောင်းကို ပြန်ပြင်ခိုင်းရပါမည်')) return;
+  r.status = 'rejected';
+  showToast('❌ '+r.tourCode+' — Reject လုပ်ပြီးပါပြီ');
+  render();
+}
+
+function fmt(n){ return Number(n).toLocaleString('en-US'); }
+function showToast(msg){
+  const t=document.getElementById('toast');
+  t.textContent=msg; t.classList.add('show');
+  setTimeout(()=>t.classList.remove('show'),3500);
+}
+
+loadJobOrderData();
+</script>
+</body>
+</html>

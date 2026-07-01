@@ -1,0 +1,683 @@
+<!DOCTYPE html>
+<html lang="my">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Apex — Job Order Form v2</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0;}
+body{font-family:'Segoe UI',Arial,sans-serif;background:#F0F4F8;color:#222;min-height:100vh;}
+
+.header{background:linear-gradient(135deg,#1F4E79,#2E75B6);padding:14px 20px;text-align:center;position:sticky;top:0;z-index:100;box-shadow:0 2px 8px rgba(0,0,0,.2);}
+.header h1{color:#fff;font-size:16px;font-weight:700;}
+.header p{color:#BDD7EE;font-size:11px;margin-top:2px;}
+.tour-banner{background:#FF9800;color:#fff;text-align:center;padding:8px 20px;font-size:13px;font-weight:700;letter-spacing:1px;}
+.trip-banner{background:#1F4E79;color:#BDD7EE;text-align:center;padding:6px 20px;font-size:12px;}
+
+.container{max-width:680px;margin:0 auto;padding:12px;}
+
+/* DAY TABS */
+.day-tabs{display:grid;grid-template-columns:1fr 1fr 1fr 1.3fr;gap:6px;margin-bottom:12px;position:sticky;top:76px;z-index:90;background:#F0F4F8;padding:8px 0;}
+.day-tab{background:#fff;border:2px solid #E0E0E0;border-radius:12px;padding:10px 4px;text-align:center;cursor:pointer;transition:all .2s;position:relative;}
+.day-tab .tnum{font-size:11px;font-weight:700;color:#888;}
+.day-tab .tdate{font-size:10px;color:#aaa;margin-top:1px;}
+.day-tab.active{border-color:#2E75B6;background:#EEF4FB;}
+.day-tab.active .tnum{color:#1F4E79;}
+.day-tab.done{border-color:#4CAF50;}
+.day-tab.done .tnum{color:#2E7D32;}
+.day-tab .check{position:absolute;top:-6px;right:-6px;width:18px;height:18px;background:#4CAF50;color:#fff;border-radius:50%;font-size:11px;display:none;align-items:center;justify-content:center;font-weight:700;}
+.day-tab.done .check{display:flex;}
+.day-tab.alltab{background:linear-gradient(135deg,#FF9800,#FFA726);border-color:#FF9800;}
+.day-tab.alltab .tnum{color:#fff;}
+.day-tab.alltab.active{background:linear-gradient(135deg,#E65100,#FF9800);}
+
+.day-panel{display:none;}
+.day-panel.active{display:block;}
+
+.card{background:#fff;border-radius:14px;box-shadow:0 2px 10px rgba(0,0,0,.08);margin-bottom:12px;overflow:hidden;}
+.card-header{background:linear-gradient(135deg,#1F4E79,#2E75B6);color:#fff;padding:10px 16px;font-size:13px;font-weight:700;display:flex;align-items:center;gap:8px;justify-content:space-between;}
+.card-body{padding:14px;}
+
+.field{margin-bottom:10px;}
+.field:last-child{margin-bottom:0;}
+.field label{display:block;font-size:11px;font-weight:700;color:#555;margin-bottom:3px;text-transform:uppercase;letter-spacing:.4px;}
+.field input,.field select,.field textarea{width:100%;padding:9px 12px;border:2px solid #E0E0E0;border-radius:10px;font-size:13px;color:#222;background:#FAFAFA;outline:none;font-family:inherit;transition:border-color .2s;}
+.field input:focus,.field select:focus{border-color:#2E75B6;background:#fff;}
+.field input[readonly]{background:#EEF4FB;color:#1F4E79;font-weight:700;}
+.field textarea{resize:vertical;min-height:60px;}
+
+.row-2{display:grid;grid-template-columns:1fr 1fr;gap:8px;}
+
+.info-row{display:flex;justify-content:space-between;align-items:flex-start;padding:7px 0;border-bottom:1px solid #F0F0F0;font-size:13px;}
+.info-row:last-child{border-bottom:none;}
+.info-row .lbl{color:#888;font-weight:600;flex-shrink:0;margin-right:10px;font-size:11px;text-transform:uppercase;}
+.info-row .val{color:#1F4E79;font-weight:700;text-align:right;}
+
+.pay-group{display:flex;gap:6px;flex-wrap:wrap;}
+.pay-btn{flex:1;min-width:65px;padding:8px 6px;border:2px solid #E0E0E0;border-radius:10px;background:#FAFAFA;font-size:12px;font-weight:700;color:#666;cursor:pointer;text-align:center;transition:all .18s;user-select:none;}
+.pay-btn.active{background:#1F4E79;border-color:#1F4E79;color:#fff;}
+
+.fuel-section{margin-bottom:10px;}
+.fuel-section-title{font-size:12px;font-weight:700;padding:6px 10px;border-radius:8px;margin-bottom:6px;display:flex;align-items:center;gap:6px;}
+.fuel-denko .fuel-section-title{background:#E8F5E9;color:#2E7D32;}
+.fuel-max .fuel-section-title{background:#E3F2FD;color:#1565C0;}
+.fuel-other .fuel-section-title{background:#FFF3E0;color:#E65100;}
+.fuel-apex .fuel-section-title{background:#FCE4EC;color:#880E4F;}
+
+.fuel-row{background:#F8FBFF;border:1.5px solid #D0E4F7;border-radius:10px;padding:10px;margin-bottom:6px;}
+.fuel-row .rline{display:flex;gap:4px;align-items:center;margin-bottom:6px;}
+.fuel-row input,.fuel-row select{padding:6px 8px;border:2px solid #E0E0E0;border-radius:7px;font-size:12px;background:#fff;outline:none;width:100%;font-family:inherit;}
+.fuel-row input:focus,.fuel-row select:focus{border-color:#2E75B6;}
+.fuel-row input[readonly]{background:#EEF4FB;color:#1F4E79;font-weight:700;}
+.fuel-col-lbl{font-size:10px;color:#888;font-weight:700;margin-bottom:2px;}
+.fuel-2col{display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:6px;}
+.del-btn{padding:4px 8px;background:#FFC7CE;border:none;border-radius:6px;color:#9C0006;cursor:pointer;font-size:12px;font-weight:700;flex-shrink:0;}
+
+.btn-add-fuel{width:100%;padding:6px;border:2px dashed #2E75B6;border-radius:8px;background:#F8FBFF;color:#2E75B6;font-size:11px;font-weight:700;cursor:pointer;text-align:center;margin-top:4px;}
+
+.operation-badge{display:inline-block;background:#FFF3E0;border:1px solid #FF9800;color:#E65100;border-radius:6px;padding:2px 8px;font-size:10px;font-weight:700;margin-top:4px;}
+.driver-badge{display:inline-block;background:#E8F5E9;border:1px solid #4CAF50;color:#2E7D32;border-radius:6px;padding:2px 8px;font-size:10px;font-weight:700;margin-top:4px;}
+
+.fuel-summary{background:#F0F4F8;border-radius:10px;padding:10px 12px;margin-top:8px;}
+.sum-row{display:flex;justify-content:space-between;padding:4px 0;font-size:12px;border-bottom:1px solid #E0E0E0;}
+.sum-row:last-child{border-bottom:none;}
+.sum-row .lbl{color:#666;}
+.sum-row .val{font-weight:700;color:#1F4E79;}
+.sum-row.highlight .lbl{color:#333;font-weight:700;}
+.sum-row.highlight .val{color:#FF9800;font-size:13px;}
+.sum-row.green .val{color:#4CAF50;}
+.sum-row.red .val{color:#E53935;}
+
+.toll-grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px;margin-bottom:8px;}
+.toll-input{padding:8px 10px;border:2px solid #E0E0E0;border-radius:8px;font-size:13px;text-align:right;outline:none;width:100%;font-family:inherit;background:#fff;}
+.toll-input:focus{border-color:#2E75B6;}
+.btn-add-toll{padding:6px 12px;border:2px dashed #2E75B6;border-radius:8px;background:#F8FBFF;color:#2E75B6;font-size:11px;font-weight:700;cursor:pointer;margin-top:4px;}
+
+.collect-box{background:#F0F4F8;border-radius:10px;padding:12px;margin-top:8px;}
+.collect-row{display:flex;justify-content:space-between;align-items:center;padding:5px 0;font-size:13px;border-bottom:1px solid #E0E0E0;}
+.collect-row:last-child{border-bottom:none;}
+.collect-row .lbl{color:#555;}
+.collect-row .val{font-weight:700;color:#1F4E79;}
+.collect-row.return .val{color:#4CAF50;}
+.collect-row.extra .val{color:#E53935;}
+
+.km-result-box{background:#EEF4FB;border:2px solid #BDD7EE;border-radius:10px;padding:10px 14px;margin-top:8px;}
+.km-row{display:flex;justify-content:space-between;align-items:center;padding:5px 0;font-size:13px;border-bottom:1px solid #D0E4F7;}
+.km-row:last-child{border-bottom:none;}
+.km-row .lbl{color:#555;}
+.km-row .val{font-weight:700;color:#1F4E79;font-size:14px;}
+.km-row.muted .val{font-size:12px;color:#888;}
+
+.readonly-val{background:#EEF4FB;border:2px solid #BDD7EE;border-radius:10px;padding:10px 14px;font-size:14px;font-weight:700;color:#1F4E79;text-align:center;}
+
+.divider{height:1px;background:#E0E0E0;margin:10px 0;}
+
+.btn-submit{width:100%;padding:14px;background:linear-gradient(135deg,#1F4E79,#2E75B6);color:#fff;border:none;border-radius:12px;font-size:14px;font-weight:700;cursor:pointer;box-shadow:0 4px 12px rgba(31,78,121,.3);letter-spacing:.5px;margin-top:4px;}
+.btn-submit.day-done{background:linear-gradient(135deg,#4CAF50,#66BB6A);}
+.btn-submit.all-day{background:linear-gradient(135deg,#E65100,#FF9800);}
+
+.autofill-note{font-size:10px;color:#2E7D32;background:#E8F5E9;padding:4px 8px;border-radius:6px;margin-top:4px;display:inline-block;}
+
+.remark-box{background:#FFF8E1;border:2px solid #FFD54F;border-radius:10px;padding:10px 12px;margin-top:10px;}
+.remark-box label{font-size:11px;font-weight:700;color:#E65100;display:block;margin-bottom:4px;}
+.remark-box textarea{width:100%;border:1.5px solid #FFD54F;border-radius:8px;padding:8px;font-size:12px;background:#fff;outline:none;font-family:inherit;min-height:50px;}
+
+.allday-summary-box{background:#FFF3E0;border:2px solid #FF9800;border-radius:12px;padding:12px;margin-bottom:12px;}
+.allday-summary-box h3{font-size:12px;color:#E65100;margin-bottom:8px;}
+.day-status-row{display:flex;justify-content:space-between;align-items:center;padding:6px 8px;background:#fff;border-radius:8px;margin-bottom:5px;font-size:12px;}
+.day-status-row .stat{font-weight:700;}
+.day-status-row .stat.done{color:#4CAF50;}
+.day-status-row .stat.pending{color:#E53935;}
+
+.toast{position:fixed;bottom:20px;left:50%;transform:translateX(-50%);background:#1F4E79;color:#fff;padding:10px 22px;border-radius:20px;font-size:13px;font-weight:600;z-index:9999;opacity:0;transition:opacity .3s;pointer-events:none;white-space:nowrap;max-width:90%;text-align:center;}
+.toast.show{opacity:1;}
+
+.hidden{display:none!important;}
+.badge{display:inline-block;padding:2px 8px;border-radius:10px;font-size:11px;font-weight:700;}
+.badge-blue{background:#BDD7EE;color:#1F4E79;}
+.badge-green{background:#C6EFCE;color:#2E7D32;}
+.badge-orange{background:#FFE0B2;color:#E65100;}
+
+@media(max-width:480px){
+  .row-2{grid-template-columns:1fr;}
+  .fuel-2col{grid-template-columns:1fr 1fr;}
+  .toll-grid{grid-template-columns:1fr 1fr;}
+  .day-tabs{grid-template-columns:1fr 1fr;grid-template-rows:1fr 1fr;}
+}
+</style>
+</head>
+<body>
+
+<div class="toast" id="toast"></div>
+
+<div class="header">
+  <h1>🚗 APEX CAR RENTAL</h1>
+  <p>Job Order Form v2 — ယာဉ်မောင်း</p>
+</div>
+<div class="tour-banner">TOUR CODE: <span id="tourBanner">26-06/045</span></div>
+<div class="trip-banner" id="tripBanner">Yangon - Bagan - Popa (3N4D) | 01.06.26 - 03.06.26</div>
+
+<div class="container">
+<div class="day-tabs" id="dayTabs"></div>
+<div id="dayPanels"></div>
+</div>
+
+<div style="height:30px;"></div>
+
+<script>
+const TRIP = {
+  tourCode: '26-06/045',
+  tripName: 'Yangon - Bagan - Popa (3N4D)',
+  carNo: '9D/8865 — Alphard',
+  driver: 'ဦးအေးမြင့် | 09-111111111',
+  contact: '09-XXXXXXXX',
+  pax: '4 ဦး',
+  payment: '💵 Cash',
+  pickupTime: '06:00',
+  pickupPlace: 'Sakura Hotel',
+  totalDays: 3,
+  dates: ['01.06.26','02.06.26','03.06.26'],
+  collectAmount: 2900000,
+  fuelAdvance: 350000,
+  tollAdvance: 60000,
+  extraKmPrice: 4500,
+  isHighway: true,
+  driverGroup: 'A' // 'A' = Crown/Alphard/Hiace/Higer Hiace/Majesty/Nissan Elgrand, 'B' = Mercedes Vito
+};
+
+// ── DRIVER WAGE CALCULATION (Highway, allowance breakdown) ──
+// Group A: 25,000 driver allowance + 10,000 meal allowance per day, +10,000/night lodging (NOT on final day)
+// Group B (Vito): 30,000 driver allowance per day, no separate meal listed
+function calcHighwayDriverFee(totalDays, group){
+  const driverRate = group === 'B' ? 30000 : 25000;
+  const mealRate = group === 'B' ? 0 : 10000;
+  const lodgingRate = 10000;
+  const nights = Math.max(0, totalDays - 1);
+
+  const driverAllowance = driverRate * totalDays;
+  const mealAllowance = mealRate * totalDays;
+  const lodgingAllowance = lodgingRate * nights;
+  const total = driverAllowance + mealAllowance + lodgingAllowance;
+
+  return { driverAllowance, mealAllowance, lodgingAllowance, total, totalDays, nights, driverRate, mealRate, lodgingRate };
+}
+const WAGE = calcHighwayDriverFee(TRIP.totalDays, TRIP.driverGroup);
+TRIP.driverFeeTotal = WAGE.total;
+TRIP.wage = WAGE;
+
+let state = { dayData: {}, daySubmitted: {1:false,2:false,3:false} };
+for(let d=1; d<=TRIP.totalDays; d++){ state.dayData[d] = { fuelCounts:{}, startKm:'', endKm:'' }; }
+
+function buildTabs(){
+  const wrap = document.getElementById('dayTabs');
+  wrap.innerHTML = '';
+  for(let d=1; d<=TRIP.totalDays; d++){
+    const tab = document.createElement('div');
+    tab.className = 'day-tab' + (d===1?' active':'');
+    tab.id = 'tab_'+d;
+    tab.onclick = () => switchTab(d);
+    tab.innerHTML = `<div class="check">✓</div><div class="tnum">Day ${d}</div><div class="tdate">${TRIP.dates[d-1]}</div>`;
+    wrap.appendChild(tab);
+  }
+  const allTab = document.createElement('div');
+  allTab.className = 'day-tab alltab';
+  allTab.id = 'tab_all';
+  allTab.onclick = () => switchTab('all');
+  allTab.innerHTML = `<div class="tnum">📋 All Day</div><div class="tdate" style="color:#FFE0B2;">Summary</div>`;
+  wrap.appendChild(allTab);
+}
+
+function switchTab(d){
+  document.querySelectorAll('.day-tab').forEach(t=>t.classList.remove('active'));
+  document.querySelectorAll('.day-panel').forEach(p=>p.classList.remove('active'));
+  document.getElementById(d==='all' ? 'tab_all' : 'tab_'+d).classList.add('active');
+  document.getElementById(d==='all' ? 'panel_all' : 'panel_'+d).classList.add('active');
+  if(d==='all') refreshAllDaySummary();
+}
+
+function buildDayPanel(d){
+  const date = TRIP.dates[d-1];
+  const isFirstDay = d===1;
+  return `
+  <div class="day-panel" id="panel_${d}">
+    <div class="card">
+      <div class="card-header">📋 Day ${d} — ${date} <span class="badge badge-blue">${TRIP.tripName}</span></div>
+      <div class="card-body">
+        <div class="info-row"><span class="lbl">Tour Code</span><span class="val">${TRIP.tourCode}</span></div>
+        <div class="info-row"><span class="lbl">ကားနံပါတ်</span><span class="val">${TRIP.carNo}</span></div>
+        <div class="info-row"><span class="lbl">ယာဉ်မောင်း</span><span class="val">${TRIP.driver}</span></div>
+        <div class="info-row"><span class="lbl">Date</span><span class="val">${date}</span></div>
+        ${isFirstDay ? `<div class="info-row"><span class="lbl">ကြိုမည့်အချိန်</span><span class="val">${TRIP.pickupTime}</span></div>
+        <div class="info-row"><span class="lbl">ကြိုမည့်နေရာ</span><span class="val">${TRIP.pickupPlace}</span></div>` : ''}
+        <div class="info-row"><span class="lbl">ဆက်သွယ်ရန်</span><span class="val">${TRIP.contact}</span></div>
+        <div class="info-row"><span class="lbl">ဧည့်သည်</span><span class="val">${TRIP.pax}</span></div>
+      </div>
+    </div>
+    ${isFirstDay ? buildCollectCard() : ''}
+    <div class="card">
+      <div class="card-header">⛽ ဆီဖိုး — Day ${d}</div>
+      <div class="card-body">
+        <div class="fuel-section fuel-denko"><div class="fuel-section-title">🟢 Denko</div><div id="denkoRows_${d}"></div><button class="btn-add-fuel" onclick="addFuelRow(${d},'denko')">+ Denko ထပ်ထည့်</button></div>
+        <div class="fuel-section fuel-max"><div class="fuel-section-title">🔵 Max</div><div id="maxRows_${d}"></div><button class="btn-add-fuel" onclick="addFuelRow(${d},'max')">+ Max ထပ်ထည့်</button></div>
+        <div class="fuel-section fuel-other"><div class="fuel-section-title">🟠 တခြားဆိုင်</div><div id="otherRows_${d}"></div><button class="btn-add-fuel" onclick="addFuelRow(${d},'other')">+ တခြားဆိုင် ထပ်ထည့်</button></div>
+        <div class="fuel-section fuel-apex"><div class="fuel-section-title">🔴 Apex အရံဆီ <span class="badge badge-orange">Operation ဖြည့်မည်</span></div><div id="apexRows_${d}"></div><button class="btn-add-fuel" onclick="addFuelRow(${d},'apex')">+ Apex ထပ်ထည့်</button></div>
+        <div class="remark-box"><label>💡 မှတ်ချက် (ဥပမာ - ဒီရက်အတွက် ဆီမဖြည့်ပါ၊ နောက်ဆုံးနေ့မှ ပေါင်းဖြည့်ပါမည်)</label><textarea id="fuelRemark_${d}" placeholder="ဆီနှင့်ပတ်သက်သည့် မှတ်ချက်..."></textarea></div>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-header">🛣️ လမ်းကြေး — Day ${d}</div>
+      <div class="card-body">
+        <div style="font-size:11px;color:#888;margin-bottom:8px;">ဖြည့်ရန် မလိုသည့် box ကို blank ထားပါ</div>
+        <div class="toll-grid" id="tollGrid_${d}"></div>
+        <button class="btn-add-toll" onclick="addTollRow(${d})">+ ထပ်ထည့်</button>
+        <div class="remark-box"><label>💡 မှတ်ချက်</label><textarea id="tollRemark_${d}" placeholder="လမ်းကြေးနှင့်ပတ်သက်သည့် မှတ်ချက်..."></textarea></div>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-header">📍 Km မှတ်တမ်း — Day ${d}</div>
+      <div class="card-body">
+        <div class="row-2">
+          <div class="field"><label>Start Km</label><input type="number" id="startKm_${d}" placeholder="0" oninput="onKmInput(${d})"><div id="autofillNote_${d}" class="autofill-note hidden">✓ Day ${d-1} End Km မှ auto-fill</div></div>
+          <div class="field"><label>End Km</label><input type="number" id="endKm_${d}" placeholder="0" oninput="onKmInput(${d})"></div>
+        </div>
+        <div class="km-result-box"><div class="km-row"><span class="lbl">Day ${d} Total Km</span><span class="val" id="dayKm_${d}">0 Km</span></div></div>
+        ${d===TRIP.totalDays ? `<div class="divider"></div><div style="font-size:11px;color:#888;">💡 Km/L နှင့် Km/Gal ကို "All Day" Summary မှာသာ တွက်ပါမည်</div>` : ''}
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-header">⏰ OT (မြို့တွင်း ရှိမှသာ)</div>
+      <div class="card-body">
+        <div class="row-2">
+          <div class="field"><label>Start Time</label><input type="time" id="startTime_${d}"></div>
+          <div class="field"><label>End Time</label><input type="time" id="endTime_${d}"></div>
+        </div>
+        <div class="field"><label>Extra Zone</label>
+          <select id="extraZone_${d}">
+            <option value="0">— Extra Zone မရှိ —</option>
+            <option value="2000">Thilawa / Hmawbi / Thanlyin / Yaylal (+2,000)</option>
+            <option value="3000">Bago / TaikKyi (+3,000)</option>
+            <option value="10000">Naypyidaw / ChaungTha / NgweSaung DR (+10,000)</option>
+          </select>
+        </div>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-header">📝 Day ${d} မှတ်ချက်</div>
+      <div class="card-body"><textarea id="dayRemark_${d}" placeholder="အထွေထွေ မှတ်ချက်..."></textarea></div>
+    </div>
+    <button class="btn-submit" id="submitBtn_${d}" onclick="submitDay(${d})">✅ Day ${d} Submit</button>
+  </div>`;
+}
+
+function buildCollectCard(){
+  return `
+  <div class="card">
+    <div class="card-header">💵 ကောက်ငွေ</div>
+    <div class="card-body">
+      <div class="field"><label>ကောက်ရမည့် ပမာဏ (Trip တစ်ခုလုံး)</label><div class="readonly-val">${fmt(TRIP.collectAmount)} Ks</div></div>
+      <div class="divider"></div>
+      <div class="field"><label>ငွေ ဘာနဲ့ ရခဲ့သလဲ</label>
+        <div class="pay-group" id="collectPayGroup">
+          <div class="pay-btn active" onclick="selectCollectPay(this,'cash')">💵 Cash</div>
+          <div class="pay-btn" onclick="selectCollectPay(this,'kpay')">📱 KPay</div>
+          <div class="pay-btn" onclick="selectCollectPay(this,'bank')">🏦 Bank</div>
+        </div>
+      </div>
+      <div id="transactionField" class="field hidden"><label>Transaction No.</label><input type="text" id="transactionNo" placeholder="Transaction No."></div>
+    </div>
+  </div>`;
+}
+
+function buildAllDayPanel(){
+  return `
+  <div class="day-panel" id="panel_all">
+    <div class="allday-summary-box"><h3>📋 Day Submit အခြေအနေ</h3><div id="dayStatusList"></div></div>
+    <div class="card">
+      <div class="card-header">📋 ခရီးစဉ် — အကျဉ်းချုပ်</div>
+      <div class="card-body">
+        <div class="info-row"><span class="lbl">Tour Code</span><span class="val">${TRIP.tourCode}</span></div>
+        <div class="info-row"><span class="lbl">ခရီးစဉ်</span><span class="val">${TRIP.tripName}</span></div>
+        <div class="info-row"><span class="lbl">Date</span><span class="val">${TRIP.dates[0]} — ${TRIP.dates[TRIP.dates.length-1]}</span></div>
+        <div class="info-row"><span class="lbl">ယာဉ်မောင်း</span><span class="val">${TRIP.driver}</span></div>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-header">⛽ ဆီဖိုး — Trip တစ်ခုလုံး Summary</div>
+      <div class="card-body">
+        <div class="fuel-summary">
+          <div class="sum-row"><span class="lbl">Total Liter (Day1+2+3)</span><span class="val" id="allTotalLtr">0.00 Ltr</span></div>
+          <div class="sum-row"><span class="lbl">Total Gallon</span><span class="val" id="allTotalGal">0.00 Gal</span></div>
+          <div class="sum-row"><span class="lbl">ဆီဖိုး စုစုပေါင်း</span><span class="val" id="allTotalFuelAmt">0 Ks</span></div>
+          <div class="sum-row"><span class="lbl">ကြိုထုတ်ပေးငွေ</span><span class="val">${fmt(TRIP.fuelAdvance)} Ks</span></div>
+          <div class="sum-row highlight"><span class="lbl" id="allFuelReturnLbl">ပြန်အပ်ရန်</span><span class="val green" id="allFuelReturn">0 Ks</span></div>
+        </div>
+        <div class="remark-box" style="margin-top:10px;">
+          <label>💡 ဆီဖိုး မပြည့်စုံသေးပါက ဒီနေရာတွင် ပေါင်းဖြည့်နိုင်ပါသည်</label>
+          <div class="fuel-section fuel-denko" style="margin-top:6px;"><div class="fuel-section-title">🟢 Denko (ထပ်ဖြည့်)</div><div id="denkoRows_all"></div><button class="btn-add-fuel" onclick="addFuelRow('all','denko')">+ Denko ထပ်ထည့်</button></div>
+          <div class="fuel-section fuel-other"><div class="fuel-section-title">🟠 တခြားဆိုင် (ထပ်ဖြည့်)</div><div id="otherRows_all"></div><button class="btn-add-fuel" onclick="addFuelRow('all','other')">+ ထပ်ထည့်</button></div>
+        </div>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-header">🛣️ လမ်းကြေး — Trip တစ်ခုလုံး Summary</div>
+      <div class="card-body">
+        <div class="collect-box">
+          <div class="collect-row"><span class="lbl">ကြိုထုတ်ပေးငွေ</span><span class="val">${fmt(TRIP.tollAdvance)} Ks</span></div>
+          <div class="collect-row"><span class="lbl">Day1+2+3 စုစုပေါင်း</span><span class="val" id="allTollTotal">0 Ks</span></div>
+          <div class="collect-row return"><span class="lbl">ပြန်အပ်ရန်</span><span class="val green" id="allTollReturn">0 Ks</span></div>
+        </div>
+        <div class="remark-box" style="margin-top:10px;"><label>💡 လမ်းကြေး ပေါင်းဖြည့်ရန်</label><div class="toll-grid" id="tollGrid_all"></div><button class="btn-add-toll" onclick="addTollRow('all')">+ ထပ်ထည့်</button></div>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-header">📍 Km Summary — Trip တစ်ခုလုံး</div>
+      <div class="card-body">
+        <div class="km-result-box">
+          <div class="km-row"><span class="lbl">Start Km (Day1)</span><span class="val" id="allStartKm">—</span></div>
+          <div class="km-row"><span class="lbl">End Km (Day${TRIP.totalDays})</span><span class="val" id="allEndKm">—</span></div>
+          <div class="km-row"><span class="lbl">Total Km</span><span class="val" id="allTotalKm">0 Km</span></div>
+          <div class="km-row muted"><span class="lbl">Km/L</span><span class="val" id="allKmL">— Km/L</span></div>
+          <div class="km-row muted"><span class="lbl">Km/Gal</span><span class="val" id="allKmGal">— Km/Gal</span></div>
+        </div>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-header">👨‍✈️ မောင်းကြေး (Read Only — Operation Team သတ်မှတ်)</div>
+      <div class="card-body">
+        <div class="km-result-box">
+          <div class="km-row"><span class="lbl">Driver Allowance (${fmt(TRIP.wage.driverRate)} × ${TRIP.totalDays} days)</span><span class="val" style="font-size:13px;">${fmt(TRIP.wage.driverAllowance)} Ks</span></div>
+          <div class="km-row"><span class="lbl">Meal Allowance (${fmt(TRIP.wage.mealRate)} × ${TRIP.totalDays} days)</span><span class="val" style="font-size:13px;">${fmt(TRIP.wage.mealAllowance)} Ks</span></div>
+          <div class="km-row"><span class="lbl">Lodging Allowance (${fmt(TRIP.wage.lodgingRate)} × ${TRIP.wage.nights} nights)</span><span class="val" style="font-size:13px;">${fmt(TRIP.wage.lodgingAllowance)} Ks</span></div>
+        </div>
+        <div class="readonly-val" style="margin-top:8px;">Total: ${fmt(TRIP.driverFeeTotal)} Ks</div>
+      </div>
+    </div>
+    <div class="card"><div class="card-header">📝 Final မှတ်ချက်</div><div class="card-body">
+      <div class="field">
+        <label>💰 အထွေထွေ ကုန်ကျစရိတ် (Ks) — Parking / Porter / Extra</label>
+        <input type="number" id="miscCost" placeholder="0" style="width:100%;padding:9px 12px;border:2px solid #E0E0E0;border-radius:10px;font-size:13px;background:#FAFAFA;outline:none;font-family:inherit;">
+      </div>
+      <div class="field" style="margin-top:8px;">
+        <label>မှတ်ချက်</label>
+        <textarea id="finalRemark" placeholder="ခရီးစဉ်တစ်ခုလုံးနှင့်ပတ်သက်သည့် နောက်ဆုံး မှတ်ချက်..."></textarea>
+      </div>
+    </div></div>
+    <button class="btn-submit all-day" onclick="submitAllDay()">🏁 All Day — Final Submit</button>
+  </div>`;
+}
+
+function addFuelRow(d, type){
+  const dKey = (typeof d === 'number') ? d : 'all';
+  if(!state.dayData[dKey]) state.dayData[dKey] = {fuelCounts:{}};
+  if(!state.dayData[dKey].fuelCounts) state.dayData[dKey].fuelCounts = {};
+  state.dayData[dKey].fuelCounts[type] = (state.dayData[dKey].fuelCounts[type]||0)+1;
+  const idx = state.dayData[dKey].fuelCounts[type];
+  const id = 'f_'+dKey+'_'+type+'_'+idx;
+  const container = document.getElementById(type+'Rows_'+dKey);
+  if(!container) return;
+  const div = document.createElement('div');
+  div.className = 'fuel-row';
+  div.id = id;
+  const dArg = (typeof d === 'number') ? d : `'${d}'`;
+
+  if(type === 'apex'){
+    div.innerHTML = `
+      <div class="rline"><input type="date" id="d_${id}" style="flex:1;"><button class="del-btn" onclick="document.getElementById('${id}').remove()">✕</button></div>
+      <div class="fuel-2col">
+        <div><div class="fuel-col-lbl">Gallon (ရိုက်)</div><input type="number" id="gal_${id}" placeholder="0.00" step="0.01" oninput="autoLtr('${id}')"></div>
+        <div><div class="fuel-col-lbl">Liter (Auto)</div><input type="number" id="ltr_${id}" placeholder="0.00" readonly></div>
+      </div>
+      <div style="font-size:10px;color:#888;">💡 ငွေပမာဏ Operation ဖြည့်မည်</div>`;
+  } else if(type === 'other'){
+    div.innerHTML = `
+      <div class="rline">
+        <input type="date" id="d_${id}" style="flex:1;">
+        <select id="pay_${id}" style="flex:1;" onchange="updateOtherPay('${id}')"><option value="cash">💵 Cash</option><option value="kpay">📱 KPay</option><option value="wave">🌊 Wave</option><option value="bank">🏦 Bank</option></select>
+        <button class="del-btn" onclick="document.getElementById('${id}').remove()">✕</button>
+      </div>
+      <div class="fuel-2col">
+        <div><div class="fuel-col-lbl">ဆိုင်အမည်</div><input type="text" id="shop_${id}" placeholder="ဆိုင်နာမည်"></div>
+        <div><div class="fuel-col-lbl">ငွေ (Ks)</div><input type="number" id="amt_${id}" placeholder="0"></div>
+      </div>
+      <div class="fuel-2col">
+        <div><div class="fuel-col-lbl">Liter (ရိုက်)</div><input type="number" id="ltr_${id}" placeholder="0.00" step="0.01" oninput="autoGal('${id}')"></div>
+        <div><div class="fuel-col-lbl">Gallon (Auto)</div><input type="number" id="gal_${id}" placeholder="0.00" readonly></div>
+      </div>
+      <div id="payBadge_${id}" class="driver-badge">💵 Cash — ယာဉ်မောင်း ရှင်းမည်</div>`;
+  } else {
+    div.innerHTML = `
+      <div class="rline">
+        <input type="date" id="d_${id}" style="flex:1;">
+        <select id="pay_${id}" style="flex:1;" onchange="updateCardCashBadge('${id}')"><option value="card">💳 Credit Card</option><option value="cash">💵 Cash</option></select>
+        <button class="del-btn" onclick="document.getElementById('${id}').remove()">✕</button>
+      </div>
+      <div class="fuel-2col"><div><div class="fuel-col-lbl">ငွေ (Ks)</div><input type="number" id="amt_${id}" placeholder="0"></div><div></div></div>
+      <div class="fuel-2col">
+        <div><div class="fuel-col-lbl">Liter (ရိုက်)</div><input type="number" id="ltr_${id}" placeholder="0.00" step="0.01" oninput="autoGal('${id}')"></div>
+        <div><div class="fuel-col-lbl">Gallon (Auto)</div><input type="number" id="gal_${id}" placeholder="0.00" readonly></div>
+      </div>
+      <div id="payBadge_${id}" class="operation-badge">💳 Card — Operation ရှင်းမည်</div>`;
+  }
+  container.appendChild(div);
+}
+
+function autoLtr(id){ const gal=parseFloat(document.getElementById('gal_'+id)?.value)||0; const el=document.getElementById('ltr_'+id); if(el) el.value = gal>0?(gal*4.54).toFixed(2):''; }
+function autoGal(id){ const ltr=parseFloat(document.getElementById('ltr_'+id)?.value)||0; const el=document.getElementById('gal_'+id); if(el) el.value = ltr>0?(ltr/4.54).toFixed(2):''; }
+function updateCardCashBadge(id){ const pay=document.getElementById('pay_'+id)?.value; const b=document.getElementById('payBadge_'+id); if(!b) return; if(pay==='card'){b.className='operation-badge';b.textContent='💳 Card — Operation ရှင်းမည်';} else {b.className='driver-badge';b.textContent='💵 Cash — ယာဉ်မောင်း ရှင်းမည်';} }
+function updateOtherPay(id){ const pay=document.getElementById('pay_'+id)?.value; const b=document.getElementById('payBadge_'+id); if(!b) return; if(pay==='cash'){b.className='driver-badge';b.textContent='💵 Cash — ယာဉ်မောင်း ရှင်းမည်';} else {b.className='operation-badge';b.textContent=`📱 ${pay.toUpperCase()} — Operation ရှင်းမည်`;} }
+
+function addTollRow(d){ const grid=document.getElementById('tollGrid_'+d); if(!grid) return; for(let i=0;i<3;i++){ const inp=document.createElement('input'); inp.type='number'; inp.className='toll-input'; inp.placeholder='0'; grid.appendChild(inp); } }
+function initTollGridFor(d, count){ for(let i=0;i<count;i++) addTollRow(d); }
+
+function onKmInput(d){
+  const start = parseFloat(document.getElementById('startKm_'+d).value)||0;
+  const end = parseFloat(document.getElementById('endKm_'+d).value)||0;
+  const total = Math.max(0, end-start);
+  document.getElementById('dayKm_'+d).textContent = total + ' Km';
+  if(d < TRIP.totalDays){
+    const nextStartEl = document.getElementById('startKm_'+(d+1));
+    const note = document.getElementById('autofillNote_'+(d+1));
+    if(nextStartEl && end > 0 && !nextStartEl.dataset.manual){
+      nextStartEl.value = end;
+      if(note) note.classList.remove('hidden');
+      onKmInput(d+1);
+    }
+  }
+}
+document.addEventListener('input', e=>{
+  if(e.target.id && e.target.id.startsWith('startKm_') && e.target.id !== 'startKm_1'){ e.target.dataset.manual = '1'; }
+});
+
+function selectCollectPay(el, method){
+  document.getElementById('collectPayGroup').querySelectorAll('.pay-btn').forEach(b=>b.classList.remove('active'));
+  el.classList.add('active');
+  document.getElementById('transactionField').classList.toggle('hidden', method !== 'kpay');
+}
+
+function submitDay(d){
+  const sk = document.getElementById('startKm_'+d).value;
+  const ek = document.getElementById('endKm_'+d).value;
+  if(!sk){ showToast('⚠️ Day '+d+' Start Km ဖြည့်ပေးပါ'); return; }
+  if(!ek){ showToast('⚠️ Day '+d+' End Km ဖြည့်ပေးပါ'); return; }
+  state.daySubmitted[d] = true;
+  document.getElementById('tab_'+d).classList.add('done');
+  document.getElementById('submitBtn_'+d).textContent = '✅ Day '+d+' — Submit ပြီးပါပြီ';
+  document.getElementById('submitBtn_'+d).classList.add('day-done');
+  showToast('✅ Day '+d+' Submit ပြီးပါပြီ!');
+  setTimeout(()=>{ if(d < TRIP.totalDays) switchTab(d+1); else switchTab('all'); }, 700);
+}
+
+function refreshAllDaySummary(){
+  const list = document.getElementById('dayStatusList');
+  let html = '';
+  for(let d=1; d<=TRIP.totalDays; d++){
+    const done = state.daySubmitted[d];
+    html += `<div class="day-status-row"><span>Day ${d} (${TRIP.dates[d-1]})</span><span class="stat ${done?'done':'pending'}">${done?'✅ ပြီးပါပြီ':'⏳ မပြီးသေး'}</span></div>`;
+  }
+  list.innerHTML = html;
+
+  let totalLtr=0, totalAmt=0, cashAmt=0;
+  ['denko','max','other','apex'].forEach(type=>{
+    document.querySelectorAll(`[id^="${type}Rows_"]`).forEach(c=>{
+      c.querySelectorAll('.fuel-row').forEach(row=>{
+        const id = row.id;
+        const ltr = parseFloat(document.getElementById('ltr_'+id)?.value)||0;
+        const amt = parseFloat(document.getElementById('amt_'+id)?.value)||0;
+        const pay = document.getElementById('pay_'+id)?.value;
+        totalLtr += ltr;
+        totalAmt += amt;
+        if(pay === 'cash') cashAmt += amt;
+      });
+    });
+  });
+  const totalGal = totalLtr/4.54;
+  document.getElementById('allTotalLtr').textContent = totalLtr.toFixed(2)+' Ltr';
+  document.getElementById('allTotalGal').textContent = totalGal.toFixed(2)+' Gal';
+  document.getElementById('allTotalFuelAmt').textContent = fmt(totalAmt)+' Ks';
+  const fdiff = TRIP.fuelAdvance - cashAmt;
+  const fLbl = document.getElementById('allFuelReturnLbl');
+  const fVal = document.getElementById('allFuelReturn');
+  if(fdiff>=0){ fLbl.textContent='ပြန်အပ်ရန်'; fVal.textContent=fmt(fdiff)+' Ks'; fVal.className='val green'; }
+  else { fLbl.textContent='ထပ်ထုတ်ရန်'; fVal.textContent=fmt(Math.abs(fdiff))+' Ks'; fVal.className='val red'; }
+
+  let tollTotal=0;
+  document.querySelectorAll('[id^="tollGrid_"] .toll-input').forEach(inp=>{ tollTotal += parseFloat(inp.value)||0; });
+  document.getElementById('allTollTotal').textContent = fmt(tollTotal)+' Ks';
+  document.getElementById('allTollReturn').textContent = fmt(Math.max(0,TRIP.tollAdvance-tollTotal))+' Ks';
+
+  const startKm1 = document.getElementById('startKm_1')?.value;
+  const endKmLast = document.getElementById('endKm_'+TRIP.totalDays)?.value;
+  document.getElementById('allStartKm').textContent = startKm1 ? startKm1+' Km' : '—';
+  document.getElementById('allEndKm').textContent = endKmLast ? endKmLast+' Km' : '—';
+  const totalKm = (startKm1 && endKmLast) ? (parseFloat(endKmLast)-parseFloat(startKm1)) : 0;
+  document.getElementById('allTotalKm').textContent = totalKm+' Km';
+  if(totalKm>0 && totalLtr>0){
+    document.getElementById('allKmL').textContent = (totalKm/totalLtr).toFixed(1)+' Km/L';
+    document.getElementById('allKmGal').textContent = (totalKm/totalGal).toFixed(1)+' Km/Gal';
+  } else {
+    document.getElementById('allKmL').textContent = '— Km/L';
+    document.getElementById('allKmGal').textContent = '— Km/Gal';
+  }
+}
+
+function submitAllDay(){
+  const allDone = Object.values(state.daySubmitted).every(v=>v);
+  if(!allDone){
+    const missing = Object.keys(state.daySubmitted).filter(k=>!state.daySubmitted[k]);
+    showToast('⚠️ Day '+missing.join(', ')+' မှာ Km မဖြည့်ရသေးပါ — ဒီနေရာတွင် ဖြည့်ပြီးမှ Submit လုပ်ပါ');
+    return;
+  }
+  showToast('🏁 All Day Final Submit ပြီးပါပြီ! Operation Team စစ်ဆေးမည်');
+  setTimeout(()=>{ alert('✅ Job Order — Final Submit ပြီးပါပြီ!\n\nTour Code: '+TRIP.tourCode+'\n\nOperation Team မှ Review/Approve လုပ်ပြီး\nTrip Record Auto Fill ဝင်မည်'); }, 500);
+}
+
+window.onload = () => {
+  document.getElementById('tourBanner').textContent = TRIP.tourCode;
+  document.getElementById('tripBanner').textContent = TRIP.tripName + ' | ' + TRIP.dates[0] + ' - ' + TRIP.dates[TRIP.dates.length-1];
+  buildTabs();
+  const panelsWrap = document.getElementById('dayPanels');
+  let html = '';
+  for(let d=1; d<=TRIP.totalDays; d++) html += buildDayPanel(d);
+  html += buildAllDayPanel();
+  panelsWrap.innerHTML = html;
+  document.getElementById('panel_1').classList.add('active');
+  for(let d=1; d<=TRIP.totalDays; d++){
+    addFuelRow(d,'denko'); addFuelRow(d,'max'); addFuelRow(d,'other'); addFuelRow(d,'apex');
+    initTollGridFor(d, 4);
+  }
+  initTollGridFor('all', 2);
+};
+
+function fmt(n){ return Number(n).toLocaleString('en-US'); }
+function showToast(msg){ const t=document.getElementById('toast'); t.textContent=msg; t.classList.add('show'); setTimeout(()=>t.classList.remove('show'),3500); }
+
+const JOB_WEBAPP_URL = 'https://script.google.com/macros/s/AKfycbxA4Oa48IJNkjk0uvcw9G90MhHL8hhsgE0zszGi2IksVwd-Uf8DOiMbviedMOr6iADVjA/exec';
+
+function collectDayData(d){
+  const data={fuel:[],toll:[],startKm:'',endKm:'',remark:''};
+  ['denko','max','other','apex'].forEach(type=>{
+    const c=document.getElementById(type+'Rows_'+d);
+    if(!c) return;
+    c.querySelectorAll('.fuel-row').forEach(row=>{
+      const id=row.id;
+      const ltr=parseFloat(document.getElementById('ltr_'+id)?.value)||0;
+      const amt=parseFloat(document.getElementById('amt_'+id)?.value)||0;
+      const pay=document.getElementById('pay_'+id)?.value||'';
+      const shop=document.getElementById('shop_'+id)?.value||'';
+      const date=document.getElementById('d_'+id)?.value||'';
+      if(ltr>0||amt>0) data.fuel.push({type,pay,amt,ltr,shop,date});
+    });
+  });
+  document.querySelectorAll('#tollGrid_'+d+' .toll-input').forEach(inp=>{
+    const v=parseFloat(inp.value)||0; if(v>0) data.toll.push(v);
+  });
+  data.startKm=parseFloat(document.getElementById('startKm_'+d)?.value)||'';
+  data.endKm=parseFloat(document.getElementById('endKm_'+d)?.value)||'';
+  data.remark=document.getElementById('fuelRemark_'+d)?.value||'';
+  return data;
+}
+
+function buildPayload(finalSubmitted){
+  const allDaysData={};
+  for(let i=1;i<=TRIP.totalDays;i++){
+    if(state.daySubmitted[i]) allDaysData[i]=state.dayData[i]||collectDayData(i);
+  }
+  return {
+    action:'saveJobOrder',
+    tourCode:TRIP.tourCode,
+    carNo:TRIP.carNo,
+    driver:TRIP.driver,
+    tripName:TRIP.tripName,
+    tripType:TRIP.isHighway?'highway':'city',
+    totalDays:TRIP.totalDays,
+    collectAmount:TRIP.collectAmount,
+    collectMethod:TRIP.payment,
+    fuelAdvance:TRIP.fuelAdvance,
+    tollAdvance:TRIP.tollAdvance,
+    driverFeeTotal:TRIP.driverFeeTotal,
+    settlement:TRIP.settlement||'advance',
+    daysData:allDaysData,
+    miscCost:parseFloat(document.getElementById('miscCost')?.value)||0,
+    remark:document.getElementById('finalRemark')?.value||'',
+    finalSubmitted,
+  };
+}
+
+function saveToSheet(payload){
+  fetch(JOB_WEBAPP_URL,{method:'POST',mode:'no-cors',headers:{'Content-Type':'text/plain'},body:JSON.stringify(payload)});
+}
+
+function submitDay(d){
+  const sk=document.getElementById('startKm_'+d).value;
+  const ek=document.getElementById('endKm_'+d).value;
+  if(!sk){ showToast('Start Km ဖြည့်ပေးပါ'); return; }
+  if(!ek){ showToast('End Km ဖြည့်ပေးပါ'); return; }
+  state.daySubmitted[d]=true;
+  state.dayData[d]=collectDayData(d);
+  saveToSheet(buildPayload(false));
+  document.getElementById('tab_'+d).classList.add('done');
+  document.getElementById('submitBtn_'+d).textContent='Day '+d+' Submit Done';
+  document.getElementById('submitBtn_'+d).classList.add('day-done');
+  showToast('Day '+d+' Submit - Sheet Save');
+  setTimeout(()=>{ if(d<TRIP.totalDays) switchTab(d+1); else switchTab('all'); },700);
+}
+
+function submitAllDay(){
+  const allDone=Object.values(state.daySubmitted).every(v=>v);
+  if(!allDone){
+    const missing=Object.keys(state.daySubmitted).filter(k=>!state.daySubmitted[k]);
+    showToast('Day '+missing.join(', ')+' Km မဖြည့်ရသေး');
+    return;
+  }
+  for(let i=1;i<=TRIP.totalDays;i++){
+    if(!state.dayData[i]||!state.dayData[i].startKm) state.dayData[i]=collectDayData(i);
+  }
+  saveToSheet(buildPayload(true));
+  showToast('Final Submit - Operation Team စစ်ဆေးမည်');
+  setTimeout(()=>{
+    alert('Job Order Final Submit Done!\nTour Code: '+TRIP.tourCode+'\nOperation Team Review/Approve လုပ်မည်\nTrip Record Auto Fill ဝင်မည်');
+  },500);
+}
+</script>
+</body>
+</html>
